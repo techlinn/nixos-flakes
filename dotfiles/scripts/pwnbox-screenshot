@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+theme="$HOME/.config/quickshell/Theme.js"
+border="$(sed -nE 's/^var accentSoft[[:space:]]*=[[:space:]]*"#?([0-9a-fA-F]{6})".*/\1/p' \
+    "$theme" 2>/dev/null | head -1)"
+[ -n "$border" ] || border="cccccc"
+
+geometry="$(
+    slurp -d -w 2 \
+        -b "#00000000" \
+        -c "#${border}ff" \
+        -s "#00000000" \
+        || true
+)"
+[ -n "$geometry" ] || exit 0
+
+notify() {
+    command -v notify-send >/dev/null 2>&1 && notify-send -a pwnbox-screenshot "$@" || true
+}
+
+mode="${1:-clipboard}"
+case "$mode" in
+    clipboard)
+        grim -g "$geometry" - | wl-copy --type image/png
+        notify -i camera-photo "Screenshot" "Region copied to the clipboard"
+        ;;
+    save)
+        dir="${XDG_PICTURES_DIR:-$HOME/Pictures}"
+        mkdir -p "$dir"
+        file="$dir/$(date +'%Y-%m-%d-%H%M%S_pwnbox.png')"
+        grim -g "$geometry" "$file"
+        wl-copy --type image/png <"$file"
+        notify -i "$file" "Screenshot" "Saved to $(basename "$file") and copied to the clipboard"
+        ;;
+    *)
+        echo "usage: pwnbox-screenshot [clipboard|save]" >&2
+        exit 2
+        ;;
+esac

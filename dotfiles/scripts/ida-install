@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+# Install IDA Pro from the installer you downloaded, and set it up for this
+# system: the library path nix-ld needs is already part of the flake, so the
+# installer runs as it is; this adds the Python link IDAPython needs, and the
+# pwnbox theme.
+#
+#   ida-install                     use the newest ida-pro_*_x64linux.run found in ~/Downloads
+#   ida-install /path/to/installer.run [prefix]
+#
+# The installer and any licence are yours to supply: nothing is downloaded and
+# nothing here deals with licences. The default prefix is ~/IDA (IDA_PREFIX
+# changes it). Safe to run again: an existing install is kept, and only the
+# setup steps are repeated.
+set -euo pipefail
+
+say() { printf '%s\n' "$*"; }
+die() { printf 'ida-install: %s\n' "$*" >&2; exit 1; }
+
+[ "$(id -u)" -ne 0 ] || die "run this as your own user, not root."
+
+installer="${1:-}"
+prefix="${2:-${IDA_PREFIX:-$HOME/IDA}}"
+
+if [ -z "$installer" ]; then
+    installer="$(find "$HOME/Downloads" -maxdepth 4 -type f -name 'ida-pro_*_x64linux.run' -printf '%T@ %p\n' 2>/dev/null \
+        | sort -rn | head -1 | cut -d' ' -f2-)"
+    if [ -z "$installer" ] && [ ! -x "$prefix/ida" ]; then
+        die "no installer found. Put ida-pro_*_x64linux.run in ~/Downloads, or run: ida-install /path/to/installer.run"
+    fi
+fi
+
+if [ -x "$prefix/ida" ]; then
+    say "IDA is already installed in $prefix; only setting it up."
+else
+    [ -f "$installer" ] || die "not a file: $installer"
+    [ -x "$installer" ] || chmod u+x "$installer"
+    say "Installing IDA from $installer into $prefix ..."
+    "$installer" --mode unattended --unattendedmodeui minimal --prefix "$prefix"
+    [ -x "$prefix/ida" ] || die "the installer finished, but $prefix/ida is missing."
+fi
+
+# IDA keeps its install folder here; the installer writes it, and the theme step
+# and idalib read it. Only written if the installer did not.
+mkdir -p "$HOME/.idapro"
+if [ ! -f "$HOME/.idapro/ida-config.json" ]; then
+    printf '{\n    "Paths":{\n        "ida-install-dir":"%s"\n    }\n}\n' "$prefix" >"$HOME/.idapro/ida-config.json"
+fi
+
+# IDAPython needs the path of a libpython. Use the one in the system profile
+# (/run/current-system/sw/lib): that path is re-pointed on every rebuild, unlike
+# the /nix/store path idapyswitch would find, which is removed by the garbage
+# collection once Python is updated. idapyswitch writes IDA's settings file, so
+# it must not run while IDA is open.
+if pgrep -x ida >/dev/null 2>&1; then
+    say "IDA is open: close it and run ida-install again to set up IDAPython."
+else
+    py="$(printf '%s\n' /run/current-system/sw/lib/libpython3.*.so.1.0 | head -1)"
+    if [ -f "$py" ]; then
+        "$prefix/idapyswitch" --force-path "$py" >/dev/null 2>&1 \
+            && say "IDAPython uses $py" || say "idapyswitch could not set $py (run $prefix/idapyswitch yourself)."
+    else
+        say "No libpython in the system profile; run $prefix/idapyswitch yourself."
+    fi
+fi
+
+# The pwnbox theme (needs ~/.idapro, which exists now).
+if [ -x "$HOME/.scripts/pwnbox-theme" ]; then
+    "$HOME/.scripts/pwnbox-theme" ida || true
+fi
+
+reg="$HOME/.idapro/ida.reg"
+if [ -f "$reg" ] && LC_ALL=C grep -qaP 'ThemeName\x00\x06\x00\x00\x00\x01pwnbox' "$reg" 2>/dev/null; then
+    theme_line="The pwnbox theme is selected in IDA."
+else
+    theme_line="The theme is selected for IDA once it has been started and closed once (it happens by itself
+the next time the theme is applied, at login or after a rebuild; \"pwnbox-theme ida\" does it right away)."
+fi
+
+cat <<EOF
+
+IDA is in $prefix. Start it from the launcher (IDA Professional) or run: $prefix/ida
+The first start asks for your licence and shows IDA's usual first-run screens.
+$theme_line
+EOF

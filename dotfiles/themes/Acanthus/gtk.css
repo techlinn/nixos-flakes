@@ -1,0 +1,15 @@
+/* Acanthus: GTK colours.
+ *
+ * The generated GTK colours use the theme's accent for every selection and
+ * button fill, which on this palette is a bright rose. Here the surfaces stay
+ * black and neutral, and the red is kept for what is small: switches and
+ * primary buttons (a dark red), links, checkmarks and focus rings.
+ */
+@define-color accent_bg_color #5a2e2e;
+@define-color accent_fg_color #f3e9e7;
+@define-color accent_color #cb9090;
+@define-color accent_bg_color #5a2e2e !important;
+@define-color accent_fg_color #f3e9e7 !important;
+@define-color accent_color #cb9090 !important;
+@define-color theme_selected_bg_color #2a2627;
+@define-color theme_selected_fg_color #e3d3d0;

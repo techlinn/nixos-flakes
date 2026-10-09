@@ -1,0 +1,40 @@
+Force cross-vCPU TLB flush on every EPT violation.
+
+VMAware's VM::HYPERVISOR_HOOK check sub-test 1 writes a byte in ntdll's
+executable section, flushes instruction cache, then races execution across
+every CPU in the affinity mask. On bare KVM, cross-vCPU EPT TLB
+invalidation lags enough that one iteration hits stale bytes and the test
+reports DETECTED. Broadcasting a TLB flush after every EPT violation
+closes that window — any guest-initiated page change is immediately
+visible on every other vCPU before anything else runs.
+
+Perf cost: one extra IPI per EPT violation. EPT violations are rare once
+pages are mapped, so steady-state workloads see almost no impact. Heavy
+page-fault churn (compilers running, VM boot, big I/O) sees ~5-10% slow-
+down. Host unaffected (code only runs when a VM is active).
+
+Only Intel-single-layer path left per VMAware v2.8.0 maintainer notes.
+
+--- a/arch/x86/kvm/vmx/vmx.c
++++ b/arch/x86/kvm/vmx/vmx.c
+@@ -5748,6 +5748,7 @@ static int handle_ept_violation(struct kvm_vcpu *vcpu)
+ {
+ 	unsigned long exit_qualification = vmx_get_exit_qual(vcpu);
+ 	gpa_t gpa;
++	int ret;
+
+ 	/*
+ 	 * EPT violation happened while executing iret from NMI,
+@@ -5773,7 +5774,11 @@ static int handle_ept_violation(struct kvm_vcpu *vcpu)
+ 	if (unlikely(allow_smaller_maxphyaddr && !kvm_vcpu_is_legal_gpa(vcpu, gpa)))
+ 		return kvm_emulate_instruction(vcpu, 0);
+
+-	return __vmx_handle_ept_violation(vcpu, gpa, exit_qualification);
++	ret = __vmx_handle_ept_violation(vcpu, gpa, exit_qualification);
++	/* Broadcast TLB flush: defeats VMAware HYPERVISOR_HOOK sub-test 1
++	 * (CC->C3 cross-core write-propagation race). */
++	kvm_make_all_cpus_request(vcpu->kvm, KVM_REQ_TLB_FLUSH);
++	return ret;
+ }
+
+ static int handle_ept_misconfig(struct kvm_vcpu *vcpu)

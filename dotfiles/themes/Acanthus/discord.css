@@ -1,0 +1,538 @@
+/* Acanthus: Discord colours.
+ *
+ * Added after the generated palette (see discord_palette_css in pwnbox-theme),
+ * so it only has to say what differs from it:
+ *
+ *   - the accent is a darker, truer red than the dusty rose used on the desktop,
+ *     which read as pink on Discord's large buttons;
+ *   - Discord's own green, blue, teal and "blurple" are re-tinted to that red, so
+ *     buttons that are normally green or blue (join voice, add friend, switches,
+ *     new-message bars ...) blend in instead of standing out in another colour.
+ *     Their lightness is kept, so nothing gets harder to read.
+ *
+ * Status stays readable by tone, not by a clashing hue: online is the theme's
+ * olive, idle its sand, do-not-disturb its red.
+ *
+ * The base is pure black. Red is kept for what is small: borders, links, badges,
+ * the selected-server marker, focus rings. Buttons are outlined in red instead
+ * of filled with it, so no large area turns red.
+ */
+:root {
+  --pw-accent: #944444;
+  --pw-on-accent: #f3e9e7;
+  --pw-accent-hsl: 0 37% 42%;
+  --pw-rgb-accent: 148, 68, 68;
+  --pw-link: #d49a9a;
+  --pw-rgb-link: 212, 154, 154;
+
+  /* filled "positive" and "expressive" buttons use the same red */
+  --pw-green: #944444;
+  --pw-on-green: #f3e9e7;
+  --pw-rgb-green: 148, 68, 68;
+  --pw-purple: #7d3a3a;
+  --pw-on-purple: #f3e9e7;
+
+  /* text that says "good" or "online" keeps the theme's olive */
+  --pw-green-text: #9fa26c;
+}
+
+:root,
+html,
+body,
+.visual-refresh,
+.theme-dark,
+.theme-darker,
+.theme-midnight,
+.theme-light,
+[data-popout-root] {
+  --status-online: #8a8d5b !important;
+  --status-positive: #8a8d5b !important;
+  --status-idle: #c2a66a !important;
+  --status-dnd: #c9605f !important;
+  --status-danger: #c9605f !important;
+
+  /* green-new scale, re-tinted */
+  --green-new-1: oklch(from hsl(var(--green-new-1-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-2: oklch(from hsl(var(--green-new-2-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-3: oklch(from hsl(var(--green-new-3-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-4: oklch(from hsl(var(--green-new-4-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-5: oklch(from hsl(var(--green-new-5-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-6: oklch(from hsl(var(--green-new-6-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-7: oklch(from hsl(var(--green-new-7-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-8: oklch(from hsl(var(--green-new-8-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-9: oklch(from hsl(var(--green-new-9-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-10: oklch(from hsl(var(--green-new-10-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-11: oklch(from hsl(var(--green-new-11-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-12: oklch(from hsl(var(--green-new-12-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-13: oklch(from hsl(var(--green-new-13-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-14: oklch(from hsl(var(--green-new-14-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-15: oklch(from hsl(var(--green-new-15-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-16: oklch(from hsl(var(--green-new-16-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-17: oklch(from hsl(var(--green-new-17-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-18: oklch(from hsl(var(--green-new-18-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-19: oklch(from hsl(var(--green-new-19-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-20: oklch(from hsl(var(--green-new-20-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-21: oklch(from hsl(var(--green-new-21-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-22: oklch(from hsl(var(--green-new-22-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-23: oklch(from hsl(var(--green-new-23-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-24: oklch(from hsl(var(--green-new-24-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-25: oklch(from hsl(var(--green-new-25-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-26: oklch(from hsl(var(--green-new-26-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-27: oklch(from hsl(var(--green-new-27-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-28: oklch(from hsl(var(--green-new-28-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-29: oklch(from hsl(var(--green-new-29-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-30: oklch(from hsl(var(--green-new-30-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-31: oklch(from hsl(var(--green-new-31-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-32: oklch(from hsl(var(--green-new-32-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-33: oklch(from hsl(var(--green-new-33-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-34: oklch(from hsl(var(--green-new-34-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-35: oklch(from hsl(var(--green-new-35-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-36: oklch(from hsl(var(--green-new-36-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-37: oklch(from hsl(var(--green-new-37-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-38: oklch(from hsl(var(--green-new-38-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-39: oklch(from hsl(var(--green-new-39-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-40: oklch(from hsl(var(--green-new-40-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-41: oklch(from hsl(var(--green-new-41-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-42: oklch(from hsl(var(--green-new-42-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-43: oklch(from hsl(var(--green-new-43-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-44: oklch(from hsl(var(--green-new-44-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-45: oklch(from hsl(var(--green-new-45-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-46: oklch(from hsl(var(--green-new-46-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-47: oklch(from hsl(var(--green-new-47-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-48: oklch(from hsl(var(--green-new-48-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-49: oklch(from hsl(var(--green-new-49-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-50: oklch(from hsl(var(--green-new-50-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-51: oklch(from hsl(var(--green-new-51-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-52: oklch(from hsl(var(--green-new-52-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-53: oklch(from hsl(var(--green-new-53-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-54: oklch(from hsl(var(--green-new-54-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-55: oklch(from hsl(var(--green-new-55-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-56: oklch(from hsl(var(--green-new-56-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-57: oklch(from hsl(var(--green-new-57-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-58: oklch(from hsl(var(--green-new-58-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-59: oklch(from hsl(var(--green-new-59-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-60: oklch(from hsl(var(--green-new-60-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-61: oklch(from hsl(var(--green-new-61-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-62: oklch(from hsl(var(--green-new-62-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-63: oklch(from hsl(var(--green-new-63-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-64: oklch(from hsl(var(--green-new-64-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-65: oklch(from hsl(var(--green-new-65-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-66: oklch(from hsl(var(--green-new-66-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-67: oklch(from hsl(var(--green-new-67-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-68: oklch(from hsl(var(--green-new-68-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-69: oklch(from hsl(var(--green-new-69-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-70: oklch(from hsl(var(--green-new-70-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-71: oklch(from hsl(var(--green-new-71-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-72: oklch(from hsl(var(--green-new-72-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-73: oklch(from hsl(var(--green-new-73-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-74: oklch(from hsl(var(--green-new-74-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-75: oklch(from hsl(var(--green-new-75-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-76: oklch(from hsl(var(--green-new-76-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-77: oklch(from hsl(var(--green-new-77-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-78: oklch(from hsl(var(--green-new-78-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-79: oklch(from hsl(var(--green-new-79-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-80: oklch(from hsl(var(--green-new-80-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-81: oklch(from hsl(var(--green-new-81-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-82: oklch(from hsl(var(--green-new-82-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-83: oklch(from hsl(var(--green-new-83-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-84: oklch(from hsl(var(--green-new-84-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-85: oklch(from hsl(var(--green-new-85-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-86: oklch(from hsl(var(--green-new-86-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-87: oklch(from hsl(var(--green-new-87-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-88: oklch(from hsl(var(--green-new-88-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-89: oklch(from hsl(var(--green-new-89-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-90: oklch(from hsl(var(--green-new-90-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-91: oklch(from hsl(var(--green-new-91-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-92: oklch(from hsl(var(--green-new-92-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-93: oklch(from hsl(var(--green-new-93-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-94: oklch(from hsl(var(--green-new-94-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-95: oklch(from hsl(var(--green-new-95-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-96: oklch(from hsl(var(--green-new-96-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-97: oklch(from hsl(var(--green-new-97-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-98: oklch(from hsl(var(--green-new-98-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-99: oklch(from hsl(var(--green-new-99-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --green-new-100: oklch(from hsl(var(--green-new-100-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+
+  /* blue-new scale, re-tinted */
+  --blue-new-1: oklch(from hsl(var(--blue-new-1-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-2: oklch(from hsl(var(--blue-new-2-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-3: oklch(from hsl(var(--blue-new-3-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-4: oklch(from hsl(var(--blue-new-4-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-5: oklch(from hsl(var(--blue-new-5-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-6: oklch(from hsl(var(--blue-new-6-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-7: oklch(from hsl(var(--blue-new-7-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-8: oklch(from hsl(var(--blue-new-8-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-9: oklch(from hsl(var(--blue-new-9-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-10: oklch(from hsl(var(--blue-new-10-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-11: oklch(from hsl(var(--blue-new-11-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-12: oklch(from hsl(var(--blue-new-12-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-13: oklch(from hsl(var(--blue-new-13-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-14: oklch(from hsl(var(--blue-new-14-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-15: oklch(from hsl(var(--blue-new-15-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-16: oklch(from hsl(var(--blue-new-16-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-17: oklch(from hsl(var(--blue-new-17-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-18: oklch(from hsl(var(--blue-new-18-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-19: oklch(from hsl(var(--blue-new-19-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-20: oklch(from hsl(var(--blue-new-20-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-21: oklch(from hsl(var(--blue-new-21-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-22: oklch(from hsl(var(--blue-new-22-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-23: oklch(from hsl(var(--blue-new-23-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-24: oklch(from hsl(var(--blue-new-24-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-25: oklch(from hsl(var(--blue-new-25-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-26: oklch(from hsl(var(--blue-new-26-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-27: oklch(from hsl(var(--blue-new-27-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-28: oklch(from hsl(var(--blue-new-28-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-29: oklch(from hsl(var(--blue-new-29-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-30: oklch(from hsl(var(--blue-new-30-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-31: oklch(from hsl(var(--blue-new-31-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-32: oklch(from hsl(var(--blue-new-32-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-33: oklch(from hsl(var(--blue-new-33-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-34: oklch(from hsl(var(--blue-new-34-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-35: oklch(from hsl(var(--blue-new-35-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-36: oklch(from hsl(var(--blue-new-36-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-37: oklch(from hsl(var(--blue-new-37-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-38: oklch(from hsl(var(--blue-new-38-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-39: oklch(from hsl(var(--blue-new-39-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-40: oklch(from hsl(var(--blue-new-40-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-41: oklch(from hsl(var(--blue-new-41-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-42: oklch(from hsl(var(--blue-new-42-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-43: oklch(from hsl(var(--blue-new-43-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-44: oklch(from hsl(var(--blue-new-44-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-45: oklch(from hsl(var(--blue-new-45-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-46: oklch(from hsl(var(--blue-new-46-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-47: oklch(from hsl(var(--blue-new-47-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-48: oklch(from hsl(var(--blue-new-48-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-49: oklch(from hsl(var(--blue-new-49-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-50: oklch(from hsl(var(--blue-new-50-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-51: oklch(from hsl(var(--blue-new-51-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-52: oklch(from hsl(var(--blue-new-52-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-53: oklch(from hsl(var(--blue-new-53-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-54: oklch(from hsl(var(--blue-new-54-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-55: oklch(from hsl(var(--blue-new-55-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-56: oklch(from hsl(var(--blue-new-56-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-57: oklch(from hsl(var(--blue-new-57-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-58: oklch(from hsl(var(--blue-new-58-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-59: oklch(from hsl(var(--blue-new-59-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-60: oklch(from hsl(var(--blue-new-60-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-61: oklch(from hsl(var(--blue-new-61-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-62: oklch(from hsl(var(--blue-new-62-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-63: oklch(from hsl(var(--blue-new-63-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-64: oklch(from hsl(var(--blue-new-64-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-65: oklch(from hsl(var(--blue-new-65-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-66: oklch(from hsl(var(--blue-new-66-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-67: oklch(from hsl(var(--blue-new-67-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-68: oklch(from hsl(var(--blue-new-68-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-69: oklch(from hsl(var(--blue-new-69-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-70: oklch(from hsl(var(--blue-new-70-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-71: oklch(from hsl(var(--blue-new-71-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-72: oklch(from hsl(var(--blue-new-72-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-73: oklch(from hsl(var(--blue-new-73-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-74: oklch(from hsl(var(--blue-new-74-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-75: oklch(from hsl(var(--blue-new-75-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-76: oklch(from hsl(var(--blue-new-76-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-77: oklch(from hsl(var(--blue-new-77-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-78: oklch(from hsl(var(--blue-new-78-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-79: oklch(from hsl(var(--blue-new-79-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-80: oklch(from hsl(var(--blue-new-80-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-81: oklch(from hsl(var(--blue-new-81-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-82: oklch(from hsl(var(--blue-new-82-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-83: oklch(from hsl(var(--blue-new-83-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-84: oklch(from hsl(var(--blue-new-84-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-85: oklch(from hsl(var(--blue-new-85-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-86: oklch(from hsl(var(--blue-new-86-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-87: oklch(from hsl(var(--blue-new-87-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-88: oklch(from hsl(var(--blue-new-88-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-89: oklch(from hsl(var(--blue-new-89-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-90: oklch(from hsl(var(--blue-new-90-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-91: oklch(from hsl(var(--blue-new-91-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-92: oklch(from hsl(var(--blue-new-92-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-93: oklch(from hsl(var(--blue-new-93-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-94: oklch(from hsl(var(--blue-new-94-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-95: oklch(from hsl(var(--blue-new-95-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-96: oklch(from hsl(var(--blue-new-96-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-97: oklch(from hsl(var(--blue-new-97-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-98: oklch(from hsl(var(--blue-new-98-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-99: oklch(from hsl(var(--blue-new-99-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blue-new-100: oklch(from hsl(var(--blue-new-100-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+
+  /* teal-new scale, re-tinted */
+  --teal-new-1: oklch(from hsl(var(--teal-new-1-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-2: oklch(from hsl(var(--teal-new-2-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-3: oklch(from hsl(var(--teal-new-3-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-4: oklch(from hsl(var(--teal-new-4-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-5: oklch(from hsl(var(--teal-new-5-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-6: oklch(from hsl(var(--teal-new-6-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-7: oklch(from hsl(var(--teal-new-7-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-8: oklch(from hsl(var(--teal-new-8-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-9: oklch(from hsl(var(--teal-new-9-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-10: oklch(from hsl(var(--teal-new-10-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-11: oklch(from hsl(var(--teal-new-11-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-12: oklch(from hsl(var(--teal-new-12-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-13: oklch(from hsl(var(--teal-new-13-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-14: oklch(from hsl(var(--teal-new-14-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-15: oklch(from hsl(var(--teal-new-15-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-16: oklch(from hsl(var(--teal-new-16-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-17: oklch(from hsl(var(--teal-new-17-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-18: oklch(from hsl(var(--teal-new-18-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-19: oklch(from hsl(var(--teal-new-19-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-20: oklch(from hsl(var(--teal-new-20-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-21: oklch(from hsl(var(--teal-new-21-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-22: oklch(from hsl(var(--teal-new-22-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-23: oklch(from hsl(var(--teal-new-23-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-24: oklch(from hsl(var(--teal-new-24-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-25: oklch(from hsl(var(--teal-new-25-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-26: oklch(from hsl(var(--teal-new-26-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-27: oklch(from hsl(var(--teal-new-27-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-28: oklch(from hsl(var(--teal-new-28-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-29: oklch(from hsl(var(--teal-new-29-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-30: oklch(from hsl(var(--teal-new-30-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-31: oklch(from hsl(var(--teal-new-31-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-32: oklch(from hsl(var(--teal-new-32-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-33: oklch(from hsl(var(--teal-new-33-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-34: oklch(from hsl(var(--teal-new-34-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-35: oklch(from hsl(var(--teal-new-35-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-36: oklch(from hsl(var(--teal-new-36-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-37: oklch(from hsl(var(--teal-new-37-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-38: oklch(from hsl(var(--teal-new-38-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-39: oklch(from hsl(var(--teal-new-39-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-40: oklch(from hsl(var(--teal-new-40-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-41: oklch(from hsl(var(--teal-new-41-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-42: oklch(from hsl(var(--teal-new-42-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-43: oklch(from hsl(var(--teal-new-43-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-44: oklch(from hsl(var(--teal-new-44-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-45: oklch(from hsl(var(--teal-new-45-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-46: oklch(from hsl(var(--teal-new-46-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-47: oklch(from hsl(var(--teal-new-47-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-48: oklch(from hsl(var(--teal-new-48-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-49: oklch(from hsl(var(--teal-new-49-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-50: oklch(from hsl(var(--teal-new-50-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-51: oklch(from hsl(var(--teal-new-51-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-52: oklch(from hsl(var(--teal-new-52-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-53: oklch(from hsl(var(--teal-new-53-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-54: oklch(from hsl(var(--teal-new-54-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-55: oklch(from hsl(var(--teal-new-55-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-56: oklch(from hsl(var(--teal-new-56-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-57: oklch(from hsl(var(--teal-new-57-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-58: oklch(from hsl(var(--teal-new-58-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-59: oklch(from hsl(var(--teal-new-59-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-60: oklch(from hsl(var(--teal-new-60-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-61: oklch(from hsl(var(--teal-new-61-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-62: oklch(from hsl(var(--teal-new-62-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-63: oklch(from hsl(var(--teal-new-63-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-64: oklch(from hsl(var(--teal-new-64-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-65: oklch(from hsl(var(--teal-new-65-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-66: oklch(from hsl(var(--teal-new-66-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-67: oklch(from hsl(var(--teal-new-67-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-68: oklch(from hsl(var(--teal-new-68-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-69: oklch(from hsl(var(--teal-new-69-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-70: oklch(from hsl(var(--teal-new-70-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-71: oklch(from hsl(var(--teal-new-71-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-72: oklch(from hsl(var(--teal-new-72-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-73: oklch(from hsl(var(--teal-new-73-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-74: oklch(from hsl(var(--teal-new-74-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-75: oklch(from hsl(var(--teal-new-75-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-76: oklch(from hsl(var(--teal-new-76-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-77: oklch(from hsl(var(--teal-new-77-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-78: oklch(from hsl(var(--teal-new-78-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-79: oklch(from hsl(var(--teal-new-79-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-80: oklch(from hsl(var(--teal-new-80-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-81: oklch(from hsl(var(--teal-new-81-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-82: oklch(from hsl(var(--teal-new-82-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-83: oklch(from hsl(var(--teal-new-83-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-84: oklch(from hsl(var(--teal-new-84-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-85: oklch(from hsl(var(--teal-new-85-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-86: oklch(from hsl(var(--teal-new-86-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-87: oklch(from hsl(var(--teal-new-87-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-88: oklch(from hsl(var(--teal-new-88-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-89: oklch(from hsl(var(--teal-new-89-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-90: oklch(from hsl(var(--teal-new-90-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-91: oklch(from hsl(var(--teal-new-91-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-92: oklch(from hsl(var(--teal-new-92-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-93: oklch(from hsl(var(--teal-new-93-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-94: oklch(from hsl(var(--teal-new-94-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-95: oklch(from hsl(var(--teal-new-95-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-96: oklch(from hsl(var(--teal-new-96-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-97: oklch(from hsl(var(--teal-new-97-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-98: oklch(from hsl(var(--teal-new-98-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-99: oklch(from hsl(var(--teal-new-99-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --teal-new-100: oklch(from hsl(var(--teal-new-100-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+
+  /* blurple scale, re-tinted */
+  --blurple-1: oklch(from hsl(var(--blurple-1-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-2: oklch(from hsl(var(--blurple-2-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-3: oklch(from hsl(var(--blurple-3-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-4: oklch(from hsl(var(--blurple-4-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-5: oklch(from hsl(var(--blurple-5-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-6: oklch(from hsl(var(--blurple-6-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-7: oklch(from hsl(var(--blurple-7-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-8: oklch(from hsl(var(--blurple-8-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-9: oklch(from hsl(var(--blurple-9-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-10: oklch(from hsl(var(--blurple-10-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-11: oklch(from hsl(var(--blurple-11-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-12: oklch(from hsl(var(--blurple-12-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-13: oklch(from hsl(var(--blurple-13-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-14: oklch(from hsl(var(--blurple-14-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-15: oklch(from hsl(var(--blurple-15-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-16: oklch(from hsl(var(--blurple-16-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-17: oklch(from hsl(var(--blurple-17-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-18: oklch(from hsl(var(--blurple-18-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-19: oklch(from hsl(var(--blurple-19-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-20: oklch(from hsl(var(--blurple-20-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-21: oklch(from hsl(var(--blurple-21-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-22: oklch(from hsl(var(--blurple-22-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-23: oklch(from hsl(var(--blurple-23-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-24: oklch(from hsl(var(--blurple-24-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-25: oklch(from hsl(var(--blurple-25-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-26: oklch(from hsl(var(--blurple-26-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-27: oklch(from hsl(var(--blurple-27-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-28: oklch(from hsl(var(--blurple-28-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-29: oklch(from hsl(var(--blurple-29-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-30: oklch(from hsl(var(--blurple-30-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-31: oklch(from hsl(var(--blurple-31-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-32: oklch(from hsl(var(--blurple-32-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-33: oklch(from hsl(var(--blurple-33-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-34: oklch(from hsl(var(--blurple-34-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-35: oklch(from hsl(var(--blurple-35-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-36: oklch(from hsl(var(--blurple-36-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-37: oklch(from hsl(var(--blurple-37-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-38: oklch(from hsl(var(--blurple-38-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-39: oklch(from hsl(var(--blurple-39-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-40: oklch(from hsl(var(--blurple-40-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-41: oklch(from hsl(var(--blurple-41-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-42: oklch(from hsl(var(--blurple-42-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-43: oklch(from hsl(var(--blurple-43-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-44: oklch(from hsl(var(--blurple-44-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-45: oklch(from hsl(var(--blurple-45-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-46: oklch(from hsl(var(--blurple-46-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-47: oklch(from hsl(var(--blurple-47-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-48: oklch(from hsl(var(--blurple-48-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-49: oklch(from hsl(var(--blurple-49-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-50: oklch(from hsl(var(--blurple-50-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-51: oklch(from hsl(var(--blurple-51-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-52: oklch(from hsl(var(--blurple-52-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-53: oklch(from hsl(var(--blurple-53-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-54: oklch(from hsl(var(--blurple-54-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-55: oklch(from hsl(var(--blurple-55-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-56: oklch(from hsl(var(--blurple-56-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-57: oklch(from hsl(var(--blurple-57-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-58: oklch(from hsl(var(--blurple-58-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-59: oklch(from hsl(var(--blurple-59-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-60: oklch(from hsl(var(--blurple-60-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-61: oklch(from hsl(var(--blurple-61-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-62: oklch(from hsl(var(--blurple-62-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-63: oklch(from hsl(var(--blurple-63-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-64: oklch(from hsl(var(--blurple-64-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-65: oklch(from hsl(var(--blurple-65-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-66: oklch(from hsl(var(--blurple-66-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-67: oklch(from hsl(var(--blurple-67-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-68: oklch(from hsl(var(--blurple-68-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-69: oklch(from hsl(var(--blurple-69-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-70: oklch(from hsl(var(--blurple-70-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-71: oklch(from hsl(var(--blurple-71-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-72: oklch(from hsl(var(--blurple-72-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-73: oklch(from hsl(var(--blurple-73-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-74: oklch(from hsl(var(--blurple-74-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-75: oklch(from hsl(var(--blurple-75-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-76: oklch(from hsl(var(--blurple-76-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-77: oklch(from hsl(var(--blurple-77-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-78: oklch(from hsl(var(--blurple-78-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-79: oklch(from hsl(var(--blurple-79-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-80: oklch(from hsl(var(--blurple-80-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-81: oklch(from hsl(var(--blurple-81-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-82: oklch(from hsl(var(--blurple-82-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-83: oklch(from hsl(var(--blurple-83-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-84: oklch(from hsl(var(--blurple-84-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-85: oklch(from hsl(var(--blurple-85-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-86: oklch(from hsl(var(--blurple-86-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-87: oklch(from hsl(var(--blurple-87-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-88: oklch(from hsl(var(--blurple-88-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-89: oklch(from hsl(var(--blurple-89-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-90: oklch(from hsl(var(--blurple-90-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-91: oklch(from hsl(var(--blurple-91-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-92: oklch(from hsl(var(--blurple-92-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-93: oklch(from hsl(var(--blurple-93-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-94: oklch(from hsl(var(--blurple-94-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-95: oklch(from hsl(var(--blurple-95-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-96: oklch(from hsl(var(--blurple-96-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-97: oklch(from hsl(var(--blurple-97-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-98: oklch(from hsl(var(--blurple-98-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-99: oklch(from hsl(var(--blurple-99-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+  --blurple-100: oklch(from hsl(var(--blurple-100-hsl) / 1) calc(l * 0.82) min(c, 0.105) 22) !important;
+
+}
+
+/* ---- pure black surfaces ---------------------------------------------------- */
+:root {
+  --pw-card: #000000;
+  --pw-higher: #0b0b0b;
+  --pw-highest: #151515;
+  --pw-rgb-chat: 0, 0, 0;
+  --pw-rgb-low: 0, 0, 0;
+  --pw-rgb-higher: 11, 11, 11;
+  --pw-rgb-highest: 21, 21, 21;
+}
+
+:root,
+html,
+body,
+.visual-refresh,
+.theme-dark,
+.theme-darker,
+.theme-midnight,
+.theme-light,
+[data-popout-root] {
+  /* the thin frame around the chat: the theme's rose, softened */
+  --app-frame-border: color-mix(in srgb, #a97575 60%, transparent) !important;
+
+  /* buttons: an outline and rose text, filled only on hover */
+  --control-primary-background-default: transparent !important;
+  --control-primary-background-hover: color-mix(in srgb, #a97575 16%, transparent) !important;
+  --control-primary-background-active: color-mix(in srgb, #a97575 26%, transparent) !important;
+  --control-primary-border-default: #a97575 !important;
+  --control-primary-text-default: #cb9090 !important;
+  --control-primary-icon-default: #cb9090 !important;
+  --control-primary-border-hover: #a97575 !important;
+  --control-primary-text-hover: #cb9090 !important;
+  --control-primary-icon-hover: #cb9090 !important;
+  --control-primary-border-active: #a97575 !important;
+  --control-primary-text-active: #cb9090 !important;
+  --control-primary-icon-active: #cb9090 !important;
+  --control-connected-background-default: transparent !important;
+  --control-connected-background-hover: color-mix(in srgb, #a97575 16%, transparent) !important;
+  --control-connected-background-active: color-mix(in srgb, #a97575 26%, transparent) !important;
+  --control-connected-border-default: #a97575 !important;
+  --control-connected-text-default: #cb9090 !important;
+  --control-connected-icon-default: #cb9090 !important;
+  --control-connected-border-hover: #a97575 !important;
+  --control-connected-text-hover: #cb9090 !important;
+  --control-connected-icon-hover: #cb9090 !important;
+  --control-connected-border-active: #a97575 !important;
+  --control-connected-text-active: #cb9090 !important;
+  --control-connected-icon-active: #cb9090 !important;
+  --control-expressive-background-default: transparent !important;
+  --control-expressive-background-hover: color-mix(in srgb, #a97575 16%, transparent) !important;
+  --control-expressive-background-active: color-mix(in srgb, #a97575 26%, transparent) !important;
+  --control-expressive-border-default: #a97575 !important;
+  --control-expressive-text-default: #cb9090 !important;
+  --control-expressive-icon-default: #cb9090 !important;
+  --control-expressive-border-hover: #a97575 !important;
+  --control-expressive-text-hover: #cb9090 !important;
+  --control-expressive-icon-hover: #cb9090 !important;
+  --control-expressive-border-active: #a97575 !important;
+  --control-expressive-text-active: #cb9090 !important;
+  --control-expressive-icon-active: #cb9090 !important;
+
+  /* destructive buttons: outlined in the theme's red too */
+  --control-critical-primary-background-default: transparent !important;
+  --control-critical-primary-background-hover: color-mix(in srgb, #c9605f 16%, transparent) !important;
+  --control-critical-primary-background-active: color-mix(in srgb, #c9605f 26%, transparent) !important;
+  --control-critical-primary-border-default: #c9605f !important;
+  --control-critical-primary-text-default: #dd7473 !important;
+  --control-critical-primary-icon-default: #dd7473 !important;
+  --control-critical-primary-border-hover: #c9605f !important;
+  --control-critical-primary-text-hover: #dd7473 !important;
+  --control-critical-primary-icon-hover: #dd7473 !important;
+  --control-critical-primary-border-active: #c9605f !important;
+  --control-critical-primary-text-active: #dd7473 !important;
+  --control-critical-primary-icon-active: #dd7473 !important;
+}

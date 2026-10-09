@@ -1,0 +1,2409 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# A rebuild (`upd`) runs this script from a background service with a bare PATH
+# (no awk, jq, pywal ...). Make sure the programs it needs are found. They are
+# only added at the end, so nothing that is already found changes.
+for _d in "/etc/profiles/per-user/$(id -un)/bin" "$HOME/.nix-profile/bin" /run/current-system/sw/bin; do
+    case ":$PATH:" in *":$_d:"*) continue ;; esac
+    [ -d "$_d" ] && PATH="$PATH:$_d"
+done
+export PATH
+unset _d
+
+cache="${XDG_CACHE_HOME:-$HOME/.cache}/pwnbox/theme"
+wal_out="${XDG_CACHE_HOME:-$HOME/.cache}/wal"
+mono="$HOME/.config/wal/monochrome"
+wall_dir="$HOME/.local/share/pwnbox/wallpapers"
+themes_dir="${XDG_CONFIG_HOME:-$HOME/.config}/pwnbox/themes"
+state="$cache/wallpaper"
+custom_state="$cache/custom-theme"
+style_state="$cache/barstyle"
+default_wall="$HOME/.config/hypr/wall.png"
+picker_cfg="$HOME/.config/rofi/picker.rasi"
+barstyle_cfg="$HOME/.config/rofi/barstyle.rasi"
+menu_cfg="$HOME/.config/rofi/menu.rasi"
+custom_cfg="$HOME/.config/rofi/custom.rasi"
+previews_dir="$HOME/.config/quickshell/previews"
+thumb_dir="$cache/thumbs"
+radius_state="$cache/radius-window"
+uir_state="$cache/radius-ui"
+blur_file="$cache/blur"
+opacity_file="$cache/opacity"
+anim_file="$cache/animations"
+font_ui_state="$cache/font-ui"
+font_app_state="$cache/font-app"
+font_ui_size_state="$cache/font-size-ui"
+font_app_size_state="$cache/font-size-app"
+
+font_choices=(
+    "Manrope"
+    "Fairfax HD"
+    "Fairfax Hax HD"
+    "Fairfax Pona HD"
+    "Fairfax SM HD"
+    "Ubuntu"
+    "Ubuntu Mono"
+    "Berkeley Mono"
+    "Spleen 6x12"
+    "Spleen 8x16"
+    "Spleen 12x24"
+    "Spleen 16x32"
+    "Terminus (TTF)"
+    "Iosevka"
+    "Iosevka Nerd Font"
+    "Iosevka Nerd Font Mono"
+    "Iosevka Nerd Font Propo"
+    "JetBrains Mono"
+    "JetBrainsMono Nerd Font"
+    "JetBrainsMono Nerd Font Mono"
+    "JetBrainsMono Nerd Font Propo"
+    "JetBrains Mono NL"
+    "JetBrainsMonoNL Nerd Font"
+    "JetBrainsMonoNL Nerd Font Mono"
+    "MesloLGS Nerd Font"
+    "MesloLGS Nerd Font Mono"
+    "MesloLGS Nerd Font Propo"
+    "FiraCode Nerd Font"
+    "FiraCode Nerd Font Mono"
+    "FiraCode Nerd Font Propo"
+    "Inconsolata"
+    "Noto Sans"
+    "Noto Sans Mono"
+    "Noto Serif"
+    "DejaVu Sans"
+    "DejaVu Sans Mono"
+    "DejaVu Serif"
+    "Liberation Sans"
+    "Liberation Mono"
+    "Liberation Serif"
+)
+
+notify() {
+    command -v notify-send >/dev/null 2>&1 && notify-send -a pwnbox-theme "$1" "${2:-}" >/dev/null 2>&1 || true
+}
+
+cp_atomic() {
+    local src="$1" dst="$2" tmp
+    [ -e "$src" ] || return 0
+    tmp="$(dirname -- "$dst")/.$(basename -- "$dst").pwnbox-tmp"
+    if cp -f "$src" "$tmp" 2>/dev/null; then
+        mv -f "$tmp" "$dst" 2>/dev/null || rm -f "$tmp"
+    else
+        rm -f "$tmp"
+    fi
+}
+
+read_state() {
+    local file="$1" fallback="$2" value
+    value="$(cat "$file" 2>/dev/null || true)"
+    [ -n "$value" ] || value="$fallback"
+    printf '%s' "$value"
+}
+
+win_radius() { read_state "$radius_state" 9; }
+ui_radius() { read_state "$uir_state" 9; }
+blur_state() { read_state "$blur_file" on; }
+blur_label() { [ "$(blur_state)" = "off" ] && printf 'Off' || printf 'On'; }
+blur_hypr() { [ "$(blur_state)" = "off" ] && printf 'false' || printf 'true'; }
+opacity() { read_state "$opacity_file" 100; }
+opacity_label() { printf '%s%%' "$(opacity)"; }
+opacity_value() {
+    local o
+    o="$(opacity)"
+    printf '%d.%02d' "$((o / 100))" "$((o % 100))"
+}
+anim_state() { read_state "$anim_file" on; }
+anim_label() { [ "$(anim_state)" = "off" ] && printf 'Off' || printf 'On'; }
+anim_hypr() { [ "$(anim_state)" = "off" ] && printf 'false' || printf 'true'; }
+ui_font() { read_state "$font_ui_state" "Manrope"; }
+app_font() { read_state "$font_app_state" "Berkeley Mono"; }
+ui_font_size() { read_state "$font_ui_size_state" 11; }
+app_font_size() { read_state "$font_app_size_state" 9; }
+
+theme_color() {
+    local key="$1" value
+    value="$(sed -nE "s/^var ${key}[[:space:]]*=[[:space:]]*\"#?([0-9a-fA-F]{6})\".*/\1/p" \
+        "$HOME/.config/quickshell/Theme.js" 2>/dev/null | head -1)"
+    [ -n "$value" ] && printf '%s' "$value" || printf '8a8a8a'
+}
+
+apply_ui_radius() {
+    local r js rofi
+    r="$(ui_radius)"
+    js="$HOME/.config/quickshell/Theme.js"
+    if [ -f "$js" ]; then
+        sed -i -E "s/^var radius([[:space:]]*)=.*/var radius      = ${r};/" "$js" 2>/dev/null || true
+    fi
+    rofi="$cache/rofi.rasi"
+    if [ -f "$rofi" ]; then
+        sed -i -E '/^[[:space:]]*radius:[[:space:]]*/d' "$rofi" 2>/dev/null || true
+        sed -i -E "0,/^[[:space:]]*\*[[:space:]]*\{/s//&\n    radius: ${r}px;/" "$rofi" 2>/dev/null || true
+    fi
+
+    apply_transparency
+}
+
+apply_transparency() {
+    local js rofi o a aa bg bgalt key val
+    js="$HOME/.config/quickshell/Theme.js"
+    [ -f "$js" ] || return 0
+    o="$(opacity)"
+    case "$o" in '' | *[!0-9]*) o=100 ;; esac
+    [ "$o" -gt 100 ] && o=100
+    a=$((o * 255 / 100))
+    aa="$(printf '%02x' "$a")"
+    bg="$(theme_color bg)"
+    bgalt="$(theme_color bgAlt)"
+
+    local bgA bgAltA
+    bgA="$(printf '#%s%s' "$aa" "$bg")"
+    bgAltA="$(printf '#%s%s' "$aa" "$bgalt")"
+    for pair in "bgA:$bgA" "bgAltA:$bgAltA"; do
+        key="${pair%%:*}"
+        val="${pair#*:}"
+        if grep -q "^var ${key}" "$js" 2>/dev/null; then
+            sed -i -E "s/^var ${key}([[:space:]]*)=.*/var ${key} = \"${val}\";/" "$js" 2>/dev/null || true
+        else
+            printf 'var %s = "%s";\n' "$key" "$val" >>"$js"
+        fi
+    done
+
+    rofi="$cache/rofi.rasi"
+    if [ -f "$rofi" ]; then
+        sed -i -E "s/^([[:space:]]*background:[[:space:]]*)#?[0-9a-fA-F]{6}([0-9a-fA-F]{2})?;/\1#${bg}${aa};/" "$rofi" 2>/dev/null || true
+        sed -i -E "s/^([[:space:]]*background-alt:[[:space:]]*)#?[0-9a-fA-F]{6}([0-9a-fA-F]{2})?;/\1#${bgalt}${aa};/" "$rofi" 2>/dev/null || true
+    fi
+}
+
+apply_fonts() {
+    local ui app uisize appsize js rofi kitty fuzzel gtk eq zed sp
+    local eqsize zedsize_ui zedsize_buf
+    ui="$(ui_font)"
+    app="$(app_font)"
+    uisize="$(ui_font_size)"
+    appsize="$(app_font_size)"
+    eqsize=$((uisize + 5))
+    zedsize_ui="$(awk -v s="$appsize" 'BEGIN { printf "%.1f", s + 4 }')"
+    zedsize_buf="$(awk -v s="$appsize" 'BEGIN { printf "%.1f", s + 1.5 }')"
+
+    js="$HOME/.config/quickshell/Theme.js"
+    if [ -f "$js" ]; then
+        sed -i -E "s/^(var fontFamily[[:space:]]*=[[:space:]]*)\"[^\"]*\"/\1\"${ui}\"/" "$js" 2>/dev/null || true
+        sed -i -E "s/^(var fontMono[[:space:]]*=[[:space:]]*)\"[^\"]*\"/\1\"${app}\"/" "$js" 2>/dev/null || true
+        sed -i -E "s/^(var fontSize[[:space:]]*=[[:space:]]*).*/\1${uisize};/" "$js" 2>/dev/null || true
+    fi
+
+    kitty="$cache/kitty.conf"
+    if [ -f "$kitty" ]; then
+        sed -i '/# pwnbox-fonts-start/,/# pwnbox-fonts-end/d' "$kitty" 2>/dev/null || true
+        {
+            printf '# pwnbox-fonts-start\n'
+            printf 'font_family %s\n' "$app"
+            # kitty runs 2pt larger than the shared application font size
+            printf 'font_size %s.0\n' "$((appsize + 2))"
+            printf '# pwnbox-fonts-end\n'
+        } >>"$kitty" 2>/dev/null || true
+    fi
+
+    rofi="$cache/rofi.rasi"
+    if [ -f "$rofi" ]; then
+        sed -i '/\/\* pwnbox-fonts-start \*\//,/\/\* pwnbox-fonts-end \*\//d' "$rofi" 2>/dev/null || true
+        {
+            printf '/* pwnbox-fonts-start */\n'
+            printf '* { font: "%s %s"; }\n' "$ui" "$uisize"
+            printf '/* pwnbox-fonts-end */\n'
+        } >>"$rofi" 2>/dev/null || true
+    fi
+
+    fuzzel="$cache/fuzzel.ini"
+    if [ -f "$fuzzel" ]; then
+        sed -i '/# pwnbox-fonts-start/,/# pwnbox-fonts-end/d' "$fuzzel" 2>/dev/null || true
+        {
+            printf '# pwnbox-fonts-start\n'
+            printf '[main]\nfont=%s:size=%s\n' "$ui" "$uisize"
+            printf '# pwnbox-fonts-end\n'
+        } >>"$fuzzel" 2>/dev/null || true
+    fi
+
+    if command -v gsettings >/dev/null 2>&1; then
+        gsettings set org.gnome.desktop.interface font-name "${ui} ${uisize}" >/dev/null 2>&1 || true
+        gsettings set org.gnome.desktop.interface document-font-name "${ui} ${uisize}" >/dev/null 2>&1 || true
+    fi
+    for gtk in "$HOME/.config/gtk-3.0/settings.ini" "$HOME/.config/gtk-4.0/settings.ini"; do
+        [ -f "$gtk" ] || continue
+        sed -i -E "s/^gtk-font-name=.*/gtk-font-name=${ui} ${uisize}/" "$gtk" 2>/dev/null || true
+    done
+
+    eq="$HOME/.config/equibop/settings/quickCss.css"
+    if [ -f "$eq" ]; then
+        sed -i '/\/\* pwnbox-fonts-start \*\//,/\/\* pwnbox-fonts-end \*\//d' "$eq" 2>/dev/null || true
+        {
+            printf '/* pwnbox-fonts-start */\n'
+            printf ':root { --font: "%s" !important; --font-code: "%s" !important; }\n' "$ui" "$app"
+            printf 'body, button, input, select, textarea { font-family: var(--font), sans-serif !important; }\n'
+            printf 'code, kbd, pre, samp { font-family: var(--font-code), monospace !important; }\n'
+            printf 'html, body { font-size: %spx !important; }\n' "$eqsize"
+            printf '/* pwnbox-fonts-end */\n'
+        } >>"$eq" 2>/dev/null || true
+    fi
+
+    zed="$HOME/.config/zed/settings.json"
+    if [ -f "$zed" ]; then
+        sed -i -E \
+            -e "s/(\"ui_font_family\"[[:space:]]*:[[:space:]]*)\"[^\"]*\"/\1\"${ui}\"/" \
+            -e "s/(\"buffer_font_family\"[[:space:]]*:[[:space:]]*)\"[^\"]*\"/\1\"${app}\"/" \
+            -e "s/(\"ui_font_size\"[[:space:]]*:[[:space:]]*)[0-9.]+/\1${zedsize_ui}/" \
+            -e "s/(\"buffer_font_size\"[[:space:]]*:[[:space:]]*)[0-9.]+/\1${zedsize_buf}/" \
+            "$zed" 2>/dev/null || true
+    fi
+
+    sync_hyprlock
+
+    printf 'set font "%s" %s\n' "$app" "$appsize" >"$cache/zathura.conf" 2>/dev/null || true
+
+    sp="$HOME/.scripts/pwnbox-spotify"
+    if [ -x "$sp" ]; then
+        "$sp" fonts >/dev/null 2>&1 || true
+    fi
+}
+
+# The Alt+Tab switcher runs in a second Quickshell instance that
+# reads the same Theme.js. Restart it (only if it is running) so it picks up
+# the new colours and fonts.
+# True only inside the graphical session. From anywhere else (a rebuild, a
+# console, ssh) Quickshell cannot open its windows.
+#
+# A rebuild (`upd`) is the tricky one: its service imports the session's
+# WAYLAND_DISPLAY, so a display that exists proves nothing, but it forces
+# QT_QPA_PLATFORM=offscreen and has no HYPRLAND_INSTANCE_SIGNATURE (Hyprland puts
+# that in the environment of everything it starts). A bar killed and restarted
+# from there never comes back, so the rebuild is refused explicitly (the
+# activation sets PWNBOX_REBUILD; HOME_MANAGER_BACKUP_EXT is set by the service
+# itself) and the signature is required.
+session_ok() {
+    local rt="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}" disp="${WAYLAND_DISPLAY:-}"
+    [ -z "${PWNBOX_REBUILD:-}" ] || return 1
+    [ -z "${HOME_MANAGER_BACKUP_EXT:-}" ] || return 1
+    [ "${QT_QPA_PLATFORM:-}" != offscreen ] || return 1
+    [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] || return 1
+    [ -n "$disp" ] || return 1
+    case "$disp" in /*) [ -S "$disp" ] ;; *) [ -S "$rt/$disp" ] ;; esac
+}
+
+# Start Quickshell the way Hyprland would: with the Qt settings of the session.
+# The platform is always set here, never inherited: a rebuild passes
+# QT_QPA_PLATFORM=offscreen down, and a bar started with that fails with "No
+# PanelWindow backend loaded".
+start_qs() {
+    XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}" QT_QPA_PLATFORM="wayland;xcb" \
+        setsid qs "$@" >/dev/null 2>&1 &
+}
+
+restart_overlays() {
+    local dir="${XDG_CONFIG_HOME:-$HOME/.config}/quickshell-overlays"
+    [ -f "$dir/shell.qml" ] || return 0
+    if qs kill -p "$dir" >/dev/null 2>&1; then
+        ( sleep 0.5; start_qs -n -p "$dir" ) >/dev/null 2>&1 &
+    fi
+}
+
+# A fingerprint of the bar's and the Alt+Tab switcher's files (not Theme.js, which
+# changes with every theme and is reloaded by the bar when it does, and not the
+# theme thumbnails). A running bar only has the files it was started with: a
+# rebuild swaps them without the bar noticing, so this is compared after a rebuild.
+bar_hash() {
+    local d
+    for d in "${XDG_CONFIG_HOME:-$HOME/.config}/quickshell" "${XDG_CONFIG_HOME:-$HOME/.config}/quickshell-overlays"; do
+        find -L "$d" -type f ! -name Theme.js ! -path '*/previews/*' 2>/dev/null | sort | xargs -r cat 2>/dev/null
+    done | sha256sum | cut -d' ' -f1
+}
+
+record_bar_stamp() {
+    mkdir -p "$cache" 2>/dev/null || return 0
+    bar_hash >"$cache/bar-loaded" 2>/dev/null || true
+}
+
+restart_quickshell() {
+    local tries=0
+    command -v qs >/dev/null 2>&1 || return 0
+    # Never take the bar down unless it can be started again.
+    session_ok || return 0
+
+    restart_overlays
+
+    pkill -f 'bin/quickshell -n$' 2>/dev/null || true
+    while pgrep -f 'bin/quickshell -n$' >/dev/null 2>&1 && [ "$tries" -lt 40 ]; do
+        sleep 0.1
+        tries=$((tries + 1))
+    done
+
+    tries=0
+    while [ "$tries" -lt 4 ]; do
+        start_qs -n
+        sleep 0.5
+        if pgrep -f 'bin/quickshell -n$' >/dev/null 2>&1; then
+            record_bar_stamp
+            return 0
+        fi
+        tries=$((tries + 1))
+        sleep 0.4
+    done
+    # Last resort: have Hyprland start it, in the environment it was made for.
+    command -v hyprctl >/dev/null 2>&1 && hyprctl dispatch exec "qs -n" >/dev/null 2>&1 || true
+    record_bar_stamp
+}
+
+# Start the bar and the Alt+Tab switcher if they are not running. Used after a
+# rebuild, which must never leave the desktop without its bar. It asks Hyprland to
+# start them (so they get the right environment), and `qs -n` refuses to start a
+# second copy, so running it with the bar up changes nothing. The Hyprland to ask
+# is the one in the user's systemd environment.
+ensure_bar() {
+    local sig dir="${XDG_CONFIG_HOME:-$HOME/.config}/quickshell-overlays" started=0
+    command -v qs >/dev/null 2>&1 && command -v hyprctl >/dev/null 2>&1 || return 0
+    sig="${HYPRLAND_INSTANCE_SIGNATURE:-$(systemctl --user show-environment 2>/dev/null | sed -n 's/^HYPRLAND_INSTANCE_SIGNATURE=//p')}"
+    [ -n "$sig" ] || return 0
+    if ! pgrep -f 'bin/quickshell -n$' >/dev/null 2>&1; then
+        HYPRLAND_INSTANCE_SIGNATURE="$sig" hyprctl dispatch exec "qs -n" >/dev/null 2>&1 || true
+        started=1
+    fi
+    if [ -f "$dir/shell.qml" ] && ! pgrep -f "bin/quickshell -n -p $dir" >/dev/null 2>&1; then
+        HYPRLAND_INSTANCE_SIGNATURE="$sig" hyprctl dispatch exec "qs -n -p $dir" >/dev/null 2>&1 || true
+        started=1
+    fi
+    if [ "$started" -eq 1 ]; then
+        # Just started with the files that are there now.
+        record_bar_stamp
+    elif [ "$(cat "$cache/bar-loaded" 2>/dev/null || true)" != "$(bar_hash)" ]; then
+        # Running, but started with older files (a rebuild replaced them): restart it
+        # from inside the session. Hyprland runs the command, so it has the session's
+        # environment, and restart-bar stamps the new files when it is done.
+        HYPRLAND_INSTANCE_SIGNATURE="$sig" hyprctl dispatch exec "$HOME/.scripts/pwnbox-theme restart-bar" >/dev/null 2>&1 || true
+    fi
+}
+
+reload_fonts() {
+    pkill -USR1 kitty 2>/dev/null || true
+    restart_quickshell
+}
+
+seed_monochrome() {
+    mkdir -p "$cache"
+    local f
+    for f in "$mono"/*; do
+        [ -e "$f" ] || continue
+        cp_atomic "$f" "$cache/$(basename -- "$f")"
+    done
+    sync_quickshell "$mono/Theme.js"
+}
+
+sync_quickshell() {
+    local src="$1"
+    [ -f "$src" ] || return 0
+    mkdir -p "$HOME/.config/quickshell" 2>/dev/null || true
+    cp -f "$src" "$HOME/.config/quickshell/Theme.js" 2>/dev/null || true
+    chmod u+w "$HOME/.config/quickshell/Theme.js" 2>/dev/null || true
+}
+
+# Zed's theme is generated from the palette. A theme folder may add a zed.json
+# with its own editor colours (which colour keywords, functions, types ... get);
+# it is laid over the generated style, so anything it does not mention still
+# follows the palette. apply_theme_look keeps the current one in the cache.
+sync_zed() {
+    local src="$1" out="$HOME/.config/zed/themes/pwnbox.json" over="$cache/zed-override.json" tmp
+    [ -f "$src" ] || return 0
+    mkdir -p "$HOME/.config/zed/themes" 2>/dev/null || true
+    if [ -f "$over" ] && command -v jq >/dev/null 2>&1; then
+        tmp="$cache/.zed-theme.tmp"
+        if jq --slurpfile o "$over" '.themes[0].style = (.themes[0].style * $o[0])' "$src" >"$tmp" 2>/dev/null \
+            && [ -s "$tmp" ]; then
+            cat "$tmp" >"$out" 2>/dev/null || true
+            rm -f "$tmp"
+            return 0
+        fi
+        rm -f "$tmp"
+    fi
+    cp -f "$src" "$out" 2>/dev/null || true
+}
+
+declare -A AP=()
+
+# The colours the app themes (Discord, OBS, Zen) are drawn from: the current
+# theme's own palette, plus a few that have to be worked out so that text
+# stays readable whatever the theme is: a darker shade of the background, a
+# link colour and status colours that contrast with the card surface, and a
+# text colour for buttons filled with the accent, red, green or purple.
+# Fills AP[name]=rrggbb (no #).
+load_app_palette() {
+    local nv="$cache/nvim-palette.lua" k v line
+    [ -f "$nv" ] || return 1
+    AP=()
+    local keys="bg fg color0 color1 color2 color3 color4 color5 color6 color9 color10 color11 color12"
+    local args=()
+    for k in $keys; do
+        v="$(sed -nE "s/^[[:space:]]*${k}[[:space:]]*=[[:space:]]*\"#?([0-9a-fA-F]{6})\".*/\1/p" "$nv" | head -1)"
+        [ -n "$v" ] || return 1
+        AP[$k]="$v"
+        args+=("$v")
+    done
+    while IFS='=' read -r k v; do
+        [ -n "$k" ] && AP[$k]="$v"
+    done < <(awk '
+        function hx(c) { return index("0123456789abcdef", tolower(c)) - 1 }
+        function byte(h, i) { return hx(substr(h, i, 1)) * 16 + hx(substr(h, i + 1, 1)) }
+        function lin(v) { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ^ 2.4 }
+        function lum(h) { return 0.2126 * lin(byte(h, 1)) + 0.7152 * lin(byte(h, 3)) + 0.0722 * lin(byte(h, 5)) }
+        function cr(a, b,   la, lb, t) { la = lum(a); lb = lum(b); if (la < lb) { t = la; la = lb; lb = t } return (la + 0.05) / (lb + 0.05) }
+        function mix(a, b, p) { return sprintf("%02x%02x%02x", byte(a,1) + (byte(b,1) - byte(a,1)) * p / 100, byte(a,3) + (byte(b,3) - byte(a,3)) * p / 100, byte(a,5) + (byte(b,5) - byte(a,5)) * p / 100) }
+        function best(against, a, b) { return cr(a, against) >= cr(b, against) ? a : b }
+        function on(x) { return cr(bg, x) >= cr(fg, x) ? bg : fg }
+        # nudge a colour toward the text colour until it reads on the surface
+        # nudge a fill colour toward the text colour until button text on it reads
+        function fillc(x,   p) { for (p = 8; cr(on(x), x) < 4.6 && p <= 100; p += 8) x = mix(x, fg, p); return x }
+        function readable(x, against,   p) { for (p = 8; cr(x, against) < 4.8 && p <= 100; p += 8) x = mix(x, fg, p); return cr(x, against) < 4.8 ? fg : x }
+        BEGIN {
+            bg = ARGV[1]; fg = ARGV[2]; card = ARGV[3]
+            red = ARGV[4]; green = ARGV[5]; yellow = ARGV[6]; accent = ARGV[7]; purple = ARGV[8]; cyan = ARGV[9]
+            red2 = ARGV[10]; green2 = ARGV[11]; yellow2 = ARGV[12]; accent2 = ARGV[13]
+            dark = lum(bg) < 0.25
+            print "deep=" mix(bg, "000000", dark ? 38 : 9)
+            # The chat surface: the theme card colour, but only slightly lighter than the
+            # background (some themes use a card far from it), and never the same or darker.
+            chat = card
+            if (lum(chat) <= lum(bg) || cr(chat, bg) < 1.05) chat = mix(bg, fg, 5)
+            for (p = 100; p > 0 && cr(chat, bg) > 1.14; p -= 5) chat = mix(bg, card, p)
+            if (cr(chat, bg) < 1.05) chat = mix(bg, fg, 5)
+            print "chat=" chat
+            print "low=" mix(bg, chat, 50)
+            print "higher=" mix(chat, fg, 4)
+            print "highest=" mix(chat, fg, 7)
+            print "text=" mix(bg, fg, 92)
+            print "muted=" mix(bg, fg, 70)
+            print "subtle=" mix(bg, fg, 54)
+            hi = mix(chat, fg, 7)
+            print "link=" readable(best(hi, accent, accent2), hi)
+            print "redtext=" readable(best(hi, red, red2), hi)
+            print "greentext=" readable(best(hi, green, green2), hi)
+            print "yellowtext=" readable(best(hi, yellow, yellow2), hi)
+            print "purpletext=" readable(purple, hi)
+            print "cyantext=" readable(cyan, hi)
+            accent = fillc(accent); red = fillc(red); green = fillc(green); purple = fillc(purple)
+            print "fillaccent=" accent
+            print "fillred=" red
+            print "fillgreen=" green
+            print "fillpurple=" purple
+            print "onaccent=" on(accent)
+            print "onred=" on(red)
+            print "ongreen=" on(green)
+            print "onpurple=" on(purple)
+            r = byte(accent,1)/255; g = byte(accent,3)/255; b = byte(accent,5)/255
+            mx = r > g ? (r > b ? r : b) : (g > b ? g : b); mn = r < g ? (r < b ? r : b) : (g < b ? g : b)
+            l = (mx + mn) / 2; d = mx - mn; h = 0; s = 0
+            if (d > 0) {
+                s = d / (1 - (2 * l - 1 < 0 ? -(2 * l - 1) : 2 * l - 1))
+                if (mx == r) h = (g - b) / d + (g < b ? 6 : 0); else if (mx == g) h = (b - r) / d + 2; else h = (r - g) / d + 4
+                h *= 60
+            }
+            printf "accenthsl=%d %d%% %d%%\n", h + 0.5, s * 100 + 0.5, l * 100 + 0.5
+        }' "${args[@]}")
+}
+
+TG_BG=""; TG_FG=""; TG_CHROM=()
+declare -A TG_CMAP=()
+
+mix_hex() {
+    local a="${1#\#}" b="${2#\#}" p="${3:-50}"
+    printf -v MIX_RESULT '%02x%02x%02x' \
+        $(( 16#${a:0:2} + (16#${b:0:2} - 16#${a:0:2}) * p / 100 )) \
+        $(( 16#${a:2:2} + (16#${b:2:2} - 16#${a:2:2}) * p / 100 )) \
+        $(( 16#${a:4:2} + (16#${b:4:2} - 16#${a:4:2}) * p / 100 ))
+}
+
+lum255() { LUM_RESULT=$(( (299 * $1 + 587 * $2 + 114 * $3) / 1000 )); }
+
+nearest_color() {
+    local r="$1" g="$2" b="$3" i cr cg cb d
+    local best="${TG_CHROM[0]:-}" bestd=99999999
+    for i in "${TG_CHROM[@]}"; do
+        cr=$((16#${i:0:2})); cg=$((16#${i:2:2})); cb=$((16#${i:4:2}))
+        d=$(( (r - cr) * (r - cr) + (g - cg) * (g - cg) + (b - cb) * (b - cb) ))
+        if [ "$d" -lt "$bestd" ]; then bestd=$d; best="$i"; fi
+    done
+    NC_RESULT="$best"
+}
+
+recolor_one() {
+    local hex="${1#\#}" alpha=""
+    if [ ${#hex} -eq 8 ]; then alpha="${hex:6:2}"; hex="${hex:0:6}"; fi
+    local new="${TG_CMAP[$hex]:-}"
+    if [ -z "$new" ]; then
+        local r=$((16#${hex:0:2})) g=$((16#${hex:2:2})) b=$((16#${hex:4:2}))
+        local mx=$r mn=$r
+        if [ "$g" -gt "$mx" ]; then mx=$g; fi
+        if [ "$g" -lt "$mn" ]; then mn=$g; fi
+        if [ "$b" -gt "$mx" ]; then mx=$b; fi
+        if [ "$b" -lt "$mn" ]; then mn=$b; fi
+        lum255 "$r" "$g" "$b"; local ls="$LUM_RESULT"
+        if [ $((mx - mn)) -le 16 ]; then
+            mix_hex "$TG_BG" "$TG_FG" "$((ls * 100 / 255))"; new="$MIX_RESULT"
+        else
+            nearest_color "$r" "$g" "$b"; local cand="$NC_RESULT"
+            if [ -z "$cand" ]; then
+                new="$TG_FG"
+            else
+                local cr=$((16#${cand:0:2})) cg=$((16#${cand:2:2})) cb=$((16#${cand:4:2}))
+                lum255 "$cr" "$cg" "$cb"; local lc="$LUM_RESULT"
+                if [ "$ls" -gt "$lc" ]; then
+                    local den=$((255 - lc)); if [ "$den" -eq 0 ]; then den=1; fi
+                    mix_hex "$cand" "$TG_FG" "$(( (ls - lc) * 100 / den ))"; new="$MIX_RESULT"
+                else
+                    if [ "$lc" -eq 0 ]; then lc=1; fi
+                    mix_hex "$cand" "$TG_BG" "$(( (lc - ls) * 100 / lc ))"; new="$MIX_RESULT"
+                fi
+            fi
+        fi
+        TG_CMAP[$hex]="$new"
+    fi
+    RO_RESULT="#${new}${alpha}"
+}
+
+load_recolor_colors() {
+    TG_BG="$(theme_color bg)"; [ -n "$TG_BG" ] || TG_BG="080808"
+    TG_FG="$(theme_color fg)"; [ -n "$TG_FG" ] || TG_FG="cccccc"
+
+    TG_CHROM=()
+    local nv="$cache/nvim-palette.lua" i v
+    if [ -f "$nv" ]; then
+        for i in 1 2 3 4 5 6 9 10 11 12 13 14; do
+            v="$(sed -nE "s/^[[:space:]]*color${i}[[:space:]]*=[[:space:]]*\"#?([0-9a-fA-F]{6})\".*/\1/p" "$nv" | head -1)"
+            if [ -n "$v" ]; then TG_CHROM+=("$v"); fi
+        done
+    fi
+    if [ ${#TG_CHROM[@]} -eq 0 ]; then
+        for v in "$(theme_color red)" "$(theme_color green)" "$(theme_color yellow)" \
+            "$(theme_color mauve)" "$(theme_color cyan)" "$(theme_color accent)"; do
+            if [ -n "$v" ]; then TG_CHROM+=("$v"); fi
+        done
+    fi
+}
+
+sync_telegram() {
+    local base="$HOME/.config/telegram/awesome.tdesktop-theme"
+    [ -f "$base" ] || return 0
+    mkdir -p "$HOME/.config/telegram" "$cache" 2>/dev/null || true
+
+    load_recolor_colors
+
+    TG_CMAP=()
+    local tmp="$cache/telegram.tdesktop-theme.tmp" line
+    : >"$tmp"
+    while IFS= read -r line; do
+        if [[ "$line" =~ ^([[:space:]]*[A-Za-z0-9_]+:[[:space:]]*)(#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?)(.*)$ ]]; then
+            recolor_one "${BASH_REMATCH[2]}"
+            printf '%s%s%s\n' "${BASH_REMATCH[1]}" "$RO_RESULT" "${BASH_REMATCH[4]}" >>"$tmp"
+        else
+            printf '%s\n' "$line" >>"$tmp"
+        fi
+    done <"$base"
+    # A theme's own Telegram colours (themes/<Name>/telegram.tdesktop-theme, kept
+    # in the cache by apply_theme_look): each "key: value;" line replaces that
+    # key above, or is added if the base theme does not have it.
+    local over="$cache/telegram-override.tdesktop-theme"
+    if [ -s "$over" ]; then
+        awk '
+            function key(l,  k) {
+                if (!match(l, /^[ \t]*[A-Za-z0-9_]+[ \t]*:/)) return ""
+                k = substr(l, RSTART, RLENGTH); gsub(/[ \t:]/, "", k); return k
+            }
+            NR == FNR { k = key($0); if (k != "") { val[k] = $0; order[++n] = k }; next }
+            { k = key($0); if (k != "" && (k in val)) { print val[k]; done[k] = 1 } else print }
+            END { for (i = 1; i <= n; i++) if (!(order[i] in done)) print val[order[i]] }
+        ' "$over" "$tmp" >"$tmp.merged" 2>/dev/null && [ -s "$tmp.merged" ] && mv -f "$tmp.merged" "$tmp"
+        rm -f "$tmp.merged"
+    fi
+    local out="$HOME/.config/telegram/pwnbox.tdesktop-theme"
+    if ! cmp -s "$tmp" "$out" 2>/dev/null; then
+        cat "$tmp" >"$out"
+    fi
+    if [ -d "$HOME/Downloads" ]; then
+        cat "$tmp" >"$HOME/Downloads/pwnbox.tdesktop-theme" 2>/dev/null || true
+    fi
+    rm -f "$tmp"
+}
+
+recolor_rgb_triplet() {
+    local r="${1:-0}" g="${2:-0}" b="${3:-0}" hex out
+    [ "$r" -gt 255 ] && r=255
+    [ "$g" -gt 255 ] && g=255
+    [ "$b" -gt 255 ] && b=255
+    printf -v hex '%02x%02x%02x' "$r" "$g" "$b"
+    recolor_one "#$hex"
+    out="${RO_RESULT#\#}"
+    RGB_RESULT="$((16#${out:0:2})), $((16#${out:2:2})), $((16#${out:4:2}))"
+}
+
+recolor_rgb_in_line() {
+    local line="$1"
+    if [[ "$line" =~ ^([[:space:]]*--[A-Za-z0-9_-]+:[[:space:]]*)([0-9]{1,3})[[:space:]]*,[[:space:]]*([0-9]{1,3})[[:space:]]*,[[:space:]]*([0-9]{1,3})(.*)$ ]]; then
+        recolor_rgb_triplet "${BASH_REMATCH[2]}" "${BASH_REMATCH[3]}" "${BASH_REMATCH[4]}"
+        line="${BASH_REMATCH[1]}${RGB_RESULT}${BASH_REMATCH[5]}"
+    fi
+    local rest="$line" out="" pre
+    while [ -n "$rest" ]; do
+        if [[ "$rest" =~ ^(.*rgba?\([[:space:]]*)([0-9]{1,3})[[:space:]]*,[[:space:]]*([0-9]{1,3})[[:space:]]*,[[:space:]]*([0-9]{1,3})(.*)$ ]]; then
+            pre="${BASH_REMATCH[1]}"
+            recolor_rgb_triplet "${BASH_REMATCH[2]}" "${BASH_REMATCH[3]}" "${BASH_REMATCH[4]}"
+            out+="$pre${RGB_RESULT}"
+            rest="${BASH_REMATCH[5]}"
+        else
+            out+="$rest"
+            break
+        fi
+    done
+    RGB_LINE="$out"
+}
+
+recolor_css_line() {
+    recolor_rgb_in_line "$1"
+    local rest="$RGB_LINE" out="" pre tok norm
+    while [ -n "$rest" ]; do
+        if [[ "$rest" =~ ^([^#]*)#([0-9a-fA-F]+)(.*)$ ]]; then
+            pre="${BASH_REMATCH[1]}"
+            tok="${BASH_REMATCH[2]}"
+            rest="${BASH_REMATCH[3]}"
+            out+="$pre#"
+            case "${#tok}" in
+                3) norm="${tok:0:1}${tok:0:1}${tok:1:1}${tok:1:1}${tok:2:1}${tok:2:1}" ;;
+                6|8) norm="$tok" ;;
+                *) out+="$tok"; continue ;;
+            esac
+            recolor_one "#$norm"
+            out+="${RO_RESULT#\#}"
+        else
+            out+="$rest"
+            break
+        fi
+    done
+    RC_RESULT="$out"
+}
+
+sync_equibop() {
+    local base="$HOME/.config/equibop/theme-base.css"
+    local out="$HOME/.config/equibop/settings/quickCss.css"
+    [ -f "$base" ] || return 0
+    [ -d "$HOME/.config/equibop" ] || return 0
+    mkdir -p "$(dirname "$out")" "$cache" 2>/dev/null || true
+
+    load_recolor_colors
+    TG_CMAP=()
+
+    local tmp="$cache/equibop.css.tmp" line
+    : >"$tmp"
+    while IFS= read -r line; do
+        recolor_css_line "$line"
+        printf '%s\n' "$RC_RESULT" >>"$tmp"
+    done <"$base"
+    (discord_palette_css) >>"$tmp" || true
+    if ! cmp -s "$tmp" "$out" 2>/dev/null; then
+        cat "$tmp" >"$out"
+    fi
+    rm -f "$tmp"
+}
+
+# Discord's own colour tokens, set from the theme's palette. The recolouring of
+# theme-base.css above only changes colours that are written in that file, which
+# leaves out most of what Discord paints with (its surfaces, text, buttons and
+# links come from tokens that file never mentions). The token rules are in
+# ~/.config/equibop/pwnbox-tokens.css and only use the --pw-* variables written
+# here, so a theme change replaces only this short block.
+rgb_triplet() {
+    local h="${1#\#}"
+    printf '%d, %d, %d' "$((16#${h:0:2}))" "$((16#${h:2:2}))" "$((16#${h:4:2}))"
+}
+
+discord_palette_css() {
+    local tokens="$HOME/.config/equibop/pwnbox-tokens.css"
+    [ -f "$tokens" ] || return 0
+    load_app_palette || return 0
+    printf '\n/* pwnbox palette: %s */\n:root {\n' "$(cat "$custom_state" 2>/dev/null || echo wallpaper)"
+    printf '  --pw-bg: #%s;\n  --pw-card: #%s;\n  --pw-fg: #%s;\n  --pw-deep: #%s;\n' \
+        "${AP[bg]}" "${AP[chat]}" "${AP[fg]}" "${AP[deep]}"
+    printf '  --pw-accent: #%s;\n  --pw-accent-hsl: %s;\n  --pw-link: #%s;\n  --pw-on-accent: #%s;\n' \
+        "${AP[fillaccent]}" "${AP[accenthsl]}" "${AP[link]}" "${AP[onaccent]}"
+    printf '  --pw-red: #%s;\n  --pw-red-text: #%s;\n  --pw-on-red: #%s;\n' \
+        "${AP[fillred]}" "${AP[redtext]}" "${AP[onred]}"
+    printf '  --pw-green: #%s;\n  --pw-green-text: #%s;\n  --pw-on-green: #%s;\n' \
+        "${AP[fillgreen]}" "${AP[greentext]}" "${AP[ongreen]}"
+    printf '  --pw-yellow: #%s;\n  --pw-yellow-text: #%s;\n' "${AP[color3]}" "${AP[yellowtext]}"
+    printf '  --pw-purple: #%s;\n  --pw-purple-text: #%s;\n  --pw-on-purple: #%s;\n  --pw-cyan: #%s;\n  --pw-cyan-text: #%s;\n' \
+        "${AP[fillpurple]}" "${AP[purpletext]}" "${AP[onpurple]}" "${AP[color6]}" "${AP[cyantext]}"
+    # The same colours as "r, g, b" for the old-style variables that the
+    # DiscordRecolor / BlurpleRecolor snippets read (--accentcolor, --textdark ...).
+    printf '  --pw-rgb-bg: %s;\n  --pw-rgb-lowest: %s;\n  --pw-rgb-low: %s;\n  --pw-rgb-chat: %s;\n  --pw-rgb-higher: %s;\n  --pw-rgb-highest: %s;\n' \
+        "$(rgb_triplet "${AP[bg]}")" "$(rgb_triplet "${AP[deep]}")" "$(rgb_triplet "${AP[low]}")" \
+        "$(rgb_triplet "${AP[chat]}")" "$(rgb_triplet "${AP[higher]}")" "$(rgb_triplet "${AP[highest]}")"
+    printf '  --pw-rgb-fg: %s;\n  --pw-rgb-text: %s;\n  --pw-rgb-muted: %s;\n  --pw-rgb-subtle: %s;\n' \
+        "$(rgb_triplet "${AP[fg]}")" "$(rgb_triplet "${AP[text]}")" "$(rgb_triplet "${AP[muted]}")" "$(rgb_triplet "${AP[subtle]}")"
+    printf '  --pw-rgb-accent: %s;\n  --pw-rgb-link: %s;\n  --pw-rgb-red: %s;\n  --pw-rgb-green: %s;\n  --pw-rgb-yellow: %s;\n' \
+        "$(rgb_triplet "${AP[fillaccent]}")" "$(rgb_triplet "${AP[link]}")" "$(rgb_triplet "${AP[fillred]}")" \
+        "$(rgb_triplet "${AP[fillgreen]}")" "$(rgb_triplet "${AP[color3]}")"
+    printf '}\n'
+    cat "$tokens"
+    # A theme's own Discord colours, if it has any (themes/<Name>/discord.css).
+    if [ -f "$cache/discord-override.css" ]; then
+        printf '\n'
+        cat "$cache/discord-override.css"
+    fi
+}
+
+# OBS Studio theme. OBS themes are small files that rename colours of its
+# built-in "Yami" theme (greys, blues, reds ...), so this extends Yami and swaps
+# in the current palette. OBS reads it from ~/.config/obs-studio/themes and the
+# choice is stored in user.ini (see apply_obs).
+obs_theme_css() {
+    load_app_palette || return 0
+    awk '
+        function hx(c) { return index("0123456789abcdef", tolower(c)) - 1 }
+        function byte(h, i) { return hx(substr(h, i, 1)) * 16 + hx(substr(h, i + 1, 1)) }
+        function lin(v) { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ^ 2.4 }
+        function lum(h) { return 0.2126 * lin(byte(h, 1)) + 0.7152 * lin(byte(h, 3)) + 0.0722 * lin(byte(h, 5)) }
+        function cr(a, b,   la, lb, t) { la = lum(a); lb = lum(b); if (la < lb) { t = la; la = lb; lb = t } return (la + 0.05) / (lb + 0.05) }
+        function mix(a, b, p) { return sprintf("%02x%02x%02x", byte(a,1) + (byte(b,1) - byte(a,1)) * p / 100, byte(a,3) + (byte(b,3) - byte(a,3)) * p / 100, byte(a,5) + (byte(b,5) - byte(a,5)) * p / 100) }
+        # the colour darkened until the theme text reads on it (buttons and selections use it as a fill)
+        function fill(x,   p) { for (p = 0; cr(fg, x) < 4.6 && p <= 100; p += 5) x = mix(x, bg, p ? 8 : 0); return x }
+        function family(name, base,   x3) {
+            x3 = fill(base)
+            printf "    --%s1: #%s;\n    --%s2: #%s;\n    --%s3: #%s;\n    --%s4: #%s;\n    --%s5: #%s;\n    --%s6: #%s;\n\n", \
+                name, mix(base, fg, 30), name, mix(x3, base, 55), name, x3, name, mix(x3, bg, 30), name, mix(x3, bg, 50), name, mix(x3, bg, 68)
+        }
+        BEGIN {
+            bg = ARGV[1]; fg = ARGV[2]; chat = ARGV[3]; deep = ARGV[4]
+            printf "@OBSThemeMeta {\n    name: \x27Pwnbox\x27;\n    id: \x27com.obsproject.Yami.Pwnbox\x27;\n    extends: \x27com.obsproject.Yami\x27;\n    author: \x27pwnbox\x27;\n    dark: \x27true\x27;\n}\n\n"
+            printf "@OBSThemeVars {\n    /* Written by pwnbox-theme from the current theme. */\n"
+            family("blue", ARGV[5]); family("red", ARGV[6]); family("green", ARGV[7]); family("yellow", ARGV[8])
+            family("purple", ARGV[9]); family("teal", ARGV[10]); family("pink", mix(ARGV[6], ARGV[9], 50))
+            # greys: window = background, base panels = card, lighter steps toward the text colour
+            printf "    --grey1: #%s;\n    --grey2: #%s;\n    --grey3: #%s;\n    --grey4: #%s;\n    --grey5: #%s;\n    --grey6: #%s;\n    --grey7: #%s;\n    --grey8: #%s;\n\n", \
+                mix(chat, fg, 31), mix(chat, fg, 24), mix(chat, fg, 18), mix(chat, fg, 12), mix(chat, fg, 6), chat, bg, deep
+            printf "    --white1: #%s;\n    --white2: #%s;\n    --white3: #%s;\n    --white4: #%s;\n    --white5: #%s;\n\n", \
+                fg, mix(bg, fg, 92), mix(bg, fg, 84), mix(bg, fg, 76), ARGV[11]
+            printf "    --black1: #%s;\n    --black2: #%s;\n    --black3: #%s;\n    --black4: #%s;\n    --black5: #%s;\n}\n", \
+                deep, mix(deep, bg, 60), mix(chat, fg, 6), mix(chat, fg, 18), mix(chat, fg, 24)
+        }' "${AP[bg]}" "${AP[fg]}" "${AP[chat]}" "${AP[deep]}" "${AP[color4]}" "${AP[color1]}" "${AP[color2]}" "${AP[color3]}" \
+        "${AP[color5]}" "${AP[color6]}" "${AP[muted]}" >"$cache/.obs-theme.body" || return 1
+    if [ -s "$cache/obs-override.txt" ]; then
+        # A theme's own variable lines (themes/<Name>/obs.txt) go last in the block.
+        sed '$d' "$cache/.obs-theme.body"
+        printf '\n    /* from the theme */\n'
+        cat "$cache/obs-override.txt"
+        printf '}\n'
+    else
+        cat "$cache/.obs-theme.body"
+    fi
+    rm -f "$cache/.obs-theme.body"
+}
+
+# Install the OBS theme and select it. OBS rewrites user.ini when it quits, so
+# the selection is only written while OBS is closed; the theme file itself is
+# always refreshed (OBS reads it at the next start).
+apply_obs() {
+    command -v obs >/dev/null 2>&1 || return 0
+    local dir="${XDG_CONFIG_HOME:-$HOME/.config}/obs-studio" tmp
+    mkdir -p "$dir/themes" "$cache" 2>/dev/null || return 0
+    tmp="$cache/obs-theme.tmp"
+    obs_theme_css >"$tmp" || { rm -f "$tmp"; return 0; }
+    [ -s "$tmp" ] || { rm -f "$tmp"; return 0; }
+    if ! cmp -s "$tmp" "$dir/themes/Pwnbox.ovt" 2>/dev/null; then
+        cat "$tmp" >"$dir/themes/Pwnbox.ovt"
+    fi
+    rm -f "$tmp"
+
+    pgrep -x obs >/dev/null 2>&1 && return 0
+    local ini="$dir/user.ini"
+    [ -f "$ini" ] || printf '[Appearance]\n' >"$ini"
+    if grep -q '^Theme=com.obsproject.Yami.Pwnbox$' "$ini"; then return 0; fi
+    if grep -q '^\[Appearance\]' "$ini"; then
+        if grep -q '^Theme=' "$ini"; then
+            sed -i 's/^Theme=.*/Theme=com.obsproject.Yami.Pwnbox/' "$ini"
+        else
+            sed -i '/^\[Appearance\]/a Theme=com.obsproject.Yami.Pwnbox' "$ini"
+        fi
+    else
+        printf '\n[Appearance]\nTheme=com.obsproject.Yami.Pwnbox\n' >>"$ini"
+    fi
+}
+
+# Zen Browser (a Firefox fork). Its interface is drawn from a few variables
+# (--zen-primary-color, --zen-colors-*, --zen-main-browser-background ...), so
+# the theme swaps those, plus the Firefox ones it does not derive from them
+# (panels, address bar, tab text). The same block goes in userChrome.css (the
+# browser window) and userContent.css (about: pages: new tab, settings).
+zen_palette_block() {
+    load_app_palette || return 1
+    local line="color-mix(in srgb, #${AP[fg]} 14%, #${AP[bg]})"
+    printf '/* pwnbox palette: %s. Written by pwnbox-theme; edits are overwritten. */\n' \
+        "$(cat "$custom_state" 2>/dev/null || echo wallpaper)"
+    printf ':root,\n:host(:is(.anonymous-content-host, notification-message)) {\n'
+    printf '  --zen-primary-color: #%s !important;\n' "${AP[color4]}"
+    printf '  --zen-branding-dark: #%s !important;\n  --zen-branding-paper: #%s !important;\n' "${AP[bg]}" "${AP[bg]}"
+    printf '  --zen-main-browser-background: #%s !important;\n  --zen-main-browser-background-toolbar: #%s !important;\n' "${AP[bg]}" "${AP[bg]}"
+    printf '  --zen-themed-toolbar-bg-transparent: #%s !important;\n' "${AP[bg]}"
+    printf '  --zen-dialog-background: #%s !important;\n  --zen-urlbar-background: #%s !important;\n' "${AP[chat]}" "${AP[higher]}"
+    printf '  --zen-colors-primary: #%s !important;\n  --zen-colors-primary-foreground: #%s !important;\n' "${AP[color4]}" "${AP[link]}"
+    printf '  --zen-colors-secondary: color-mix(in srgb, #%s 26%%, #%s) !important;\n' "${AP[color4]}" "${AP[bg]}"
+    printf '  --zen-colors-tertiary: #%s !important;\n  --zen-colors-hover-bg: color-mix(in srgb, #%s 16%%, #%s) !important;\n' "${AP[chat]}" "${AP[color4]}" "${AP[bg]}"
+    printf '  --zen-colors-border: %s !important;\n  --zen-colors-border-contrast: color-mix(in srgb, #%s 12%%, transparent) !important;\n' "$line" "${AP[fg]}"
+    printf '  --zen-colors-input-bg: #%s !important;\n' "${AP[higher]}"
+    # window, toolbar, address bar, panels and tabs
+    printf '  --toolbox-textcolor: #%s !important;\n  --toolbar-color: #%s !important;\n  --toolbar-bgcolor: #%s !important;\n' "${AP[fg]}" "${AP[fg]}" "${AP[bg]}"
+    printf '  --toolbar-field-background-color: #%s !important;\n  --toolbar-field-color: #%s !important;\n' "${AP[higher]}" "${AP[fg]}"
+    printf '  --toolbar-field-focus-background-color: #%s !important;\n  --toolbar-field-focus-color: #%s !important;\n' "${AP[highest]}" "${AP[fg]}"
+    printf '  --urlbar-box-bgcolor: #%s !important;\n  --urlbar-box-text-color: #%s !important;\n' "${AP[higher]}" "${AP[fg]}"
+    printf '  --arrowpanel-background: #%s !important;\n  --arrowpanel-color: #%s !important;\n  --arrowpanel-border-color: %s !important;\n' "${AP[chat]}" "${AP[fg]}" "$line"
+    printf '  --panel-background: #%s !important;\n  --panel-color: #%s !important;\n  --panel-border-color: %s !important;\n' "${AP[chat]}" "${AP[fg]}" "$line"
+    printf '  --tab-selected-bgcolor: #%s !important;\n  --tab-selected-textcolor: #%s !important;\n' "${AP[highest]}" "${AP[fg]}"
+    printf '  --lwt-text-color: #%s !important;\n  --lwt-accent-color: #%s !important;\n' "${AP[fg]}" "${AP[bg]}"
+    printf '  --link-color: #%s !important;\n  --link-color-hover: #%s !important;\n' "${AP[link]}" "${AP[link]}"
+    # Firefox design tokens: the pages inside Zen (settings, new tab, downloads ...)
+    printf '  --background-color-canvas: #%s !important;\n  --background-color-box: #%s !important;\n  --background-color-box-info: #%s !important;\n' \
+        "${AP[bg]}" "${AP[chat]}" "${AP[higher]}"
+    printf '  --text-color: #%s !important;\n  --text-color-deemphasized: #%s !important;\n' "${AP[fg]}" "${AP[muted]}"
+    printf '  --border-color: %s !important;\n  --border-color-deemphasized: color-mix(in srgb, #%s 8%%, #%s) !important;\n  --border-color-interactive: color-mix(in srgb, #%s 28%%, #%s) !important;\n' \
+        "$line" "${AP[fg]}" "${AP[bg]}" "${AP[fg]}" "${AP[bg]}"
+    printf '  --color-accent-primary: #%s !important;\n  --color-accent-primary-hover: color-mix(in srgb, #%s 88%%, white) !important;\n  --color-accent-primary-active: color-mix(in srgb, #%s 80%%, white) !important;\n' \
+        "${AP[color4]}" "${AP[color4]}" "${AP[color4]}"
+    printf '  --color-accent-primary-selected: #%s !important;\n  --text-color-accent-primary-selected: #%s !important;\n' "${AP[fillaccent]}" "${AP[onaccent]}"
+    printf '  --button-background-color-primary: #%s !important;\n  --button-text-color-primary: #%s !important;\n  --button-text-color: #%s !important;\n' \
+        "${AP[fillaccent]}" "${AP[onaccent]}" "${AP[fg]}"
+    printf '  --table-row-background-color-alternate: #%s !important;\n  --focus-outline-color: #%s !important;\n' "${AP[higher]}" "${AP[color4]}"
+    # about: pages (settings, new tab ...)
+    printf '  --in-content-page-background: #%s !important;\n  --in-content-page-color: #%s !important;\n' "${AP[bg]}" "${AP[fg]}"
+    printf '  --in-content-box-background: #%s !important;\n  --in-content-box-border-color: %s !important;\n' "${AP[chat]}" "$line"
+    printf '  --in-content-accent-color: #%s !important;\n  --in-content-primary-button-background: #%s !important;\n  --in-content-primary-button-text-color: #%s !important;\n' \
+        "${AP[color4]}" "${AP[fillaccent]}" "${AP[onaccent]}"
+    printf '  --in-content-link-color: #%s !important;\n  --in-content-text-color: #%s !important;\n' "${AP[link]}" "${AP[fg]}"
+    printf '}\n'
+}
+
+apply_zen() {
+    command -v zen >/dev/null 2>&1 || return 0
+    local zroot="${XDG_CONFIG_HOME:-$HOME/.config}/zen" ini block tmp rel dir
+    ini="$zroot/profiles.ini"
+    [ -f "$ini" ] || return 0
+    block="$cache/zen-block.tmp"
+    zen_palette_block >"$block" || { rm -f "$block"; return 0; }
+    [ -s "$block" ] || { rm -f "$block"; return 0; }
+    while IFS= read -r rel; do
+        case "$rel" in /*) dir="$rel" ;; *) dir="$zroot/$rel" ;; esac
+        [ -d "$dir" ] || continue
+        mkdir -p "$dir/chrome" 2>/dev/null || continue
+        for f in userChrome.css userContent.css; do
+            tmp="$cache/zen-$f.tmp"
+            if [ "$f" = userContent.css ]; then
+                {
+                    printf '@-moz-document url-prefix("about:") {\n'
+                    cat "$block"
+                    [ -s "$cache/zen-override.css" ] && cat "$cache/zen-override.css"
+                    printf '}\n'
+                } >"$tmp"
+            else
+                # Zen paints the window with a gradient that it writes straight onto
+                # these two elements, so setting the variables on :root is not enough.
+                {
+                    cat "$block"
+                    printf '#zen-browser-background,\n#zen-toolbar-background {\n'
+                    for v in --zen-main-browser-background --zen-main-browser-background-toolbar \
+                        --zen-main-browser-background-old --zen-main-browser-background-toolbar-old; do
+                        printf '  %s: #%s !important;\n' "$v" "${AP[bg]}"
+                    done
+                    printf '}\n'
+                    [ -s "$cache/zen-override.css" ] && cat "$cache/zen-override.css"
+                } >"$tmp"
+            fi
+            if ! cmp -s "$tmp" "$dir/chrome/$f" 2>/dev/null; then
+                cat "$tmp" >"$dir/chrome/$f"
+            fi
+            rm -f "$tmp"
+        done
+        # Zen ignores userChrome.css unless this preference is on. It is read at
+        # startup, so a running Zen picks the colours up the next time it starts.
+        if ! grep -qs 'toolkit.legacyUserProfileCustomizations.stylesheets' "$dir/user.js"; then
+            printf 'user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);\n' >>"$dir/user.js"
+        fi
+    done < <(sed -n 's/^Path=//p' "$ini")
+    rm -f "$block"
+}
+
+# IDA Pro. Its look is plain CSS (themes/<name>/theme.css, in IDA's install
+# folder or in ~/.idapro/themes). The fixed look is ~/.config/ida/pwnbox-theme.css
+# and only uses ${pw_*} variables; this writes the "@def pw_*" block that gives
+# them values from the current palette, and puts both in
+# ~/.idapro/themes/pwnbox/theme.css. Syntax colours follow the same roles as the
+# Zed theme (keywords = colour 4, strings = 2, numbers = 3, functions and types
+# = 6 and 5 ...) and are nudged until they read on the editor background.
+ida_palette_defs() {
+    local nv="$cache/nvim-palette.lua" k v i r
+    local -a args=()
+    load_app_palette || return 1
+    [ -n "${AP[chat]:-}" ] && [ -n "${AP[deep]:-}" ] || return 1
+    args+=("${AP[bg]}" "${AP[fg]}" "${AP[chat]}" "${AP[deep]}")
+    for i in $(seq 0 15); do
+        v="$(sed -nE "s/^[[:space:]]*color${i}[[:space:]]*=[[:space:]]*\"#?([0-9a-fA-F]{6})\".*/\1/p" "$nv" | head -1)"
+        [ -n "$v" ] || return 1
+        args+=("$v")
+    done
+    # The outline colour: the theme's own border colour if it names one (the same
+    # one the window border, panels and menus use), otherwise its accent (colour 4).
+    v="$(cat "$cache/border-override" 2>/dev/null || true)"
+    [[ "$v" =~ ^[0-9a-fA-F]{6}$ ]] || v="${args[8]}"
+    args+=("$v")
+    r="$(ui_radius)"
+    case "$r" in '' | *[!0-9]*) r=0 ;; esac
+    [ "$r" -gt 6 ] && r=6
+    awk -v radius="$r" '
+        function hx(c) { return index("0123456789abcdef", tolower(c)) - 1 }
+        function byte(h, i) { return hx(substr(h, i, 1)) * 16 + hx(substr(h, i + 1, 1)) }
+        function lin(v) { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ^ 2.4 }
+        function lum(h) { return 0.2126 * lin(byte(h, 1)) + 0.7152 * lin(byte(h, 3)) + 0.0722 * lin(byte(h, 5)) }
+        function cr(a, b,   la, lb, t) { la = lum(a); lb = lum(b); if (la < lb) { t = la; la = lb; lb = t } return (la + 0.05) / (lb + 0.05) }
+        function mix(a, b, p) { return sprintf("%02x%02x%02x", byte(a,1) + (byte(b,1) - byte(a,1)) * p / 100, byte(a,3) + (byte(b,3) - byte(a,3)) * p / 100, byte(a,5) + (byte(b,5) - byte(a,5)) * p / 100) }
+        # the colour, pulled toward the text colour until it reads (min:1) on `against`
+        function rd(x, against, min,   p, t) { for (p = 0; p <= 100; p += 4) { t = mix(x, fg, p); if (cr(t, against) >= min) return t } return fg }
+        # a dim colour: pushed toward the background until it is only just readable
+        function dim(x, against, min,   p, t) { t = x; for (p = 0; p <= 100; p += 4) { if (cr(mix(x, against, p), against) < min) break; t = mix(x, against, p) } return t }
+        # a syntax colour: readable on the editor background and on the selected line
+        function tk(x) { return rd(rd(x, bg, 5.2), sel_line, 4.5) }
+        function on(x) { return cr(bg, x) >= cr(fg, x) ? bg : fg }
+        # the colour lifted toward the text colour until the background colour reads on it
+        function lift(x,   p, t) { for (p = 0; p <= 100; p += 4) { t = mix(x, fg, p); if (cr(bg, t) >= 5.2) return t } return fg }
+        function rgb(x) { return sprintf("%d, %d, %d", byte(x,1), byte(x,3), byte(x,5)) }
+        # the grey of the same lightness. The greys come from white and black, never from
+        # the tinted text colour of the theme, so nothing reads as a dim version of the accent
+        function gray(x,   l) { l = int(byte(x,1) * 0.2126 + byte(x,3) * 0.7152 + byte(x,5) * 0.0722 + 0.5); return sprintf("%02x%02x%02x", l, l, l) }
+        function N(p) { return mix(bg, "ffffff", p) }
+        function def(n, v) { printf "@def pw_%s #%s;\n", n, v }
+        BEGIN {
+            bg = gray(ARGV[1]); fg = "ffffff"
+            for (i = 0; i < 16; i++) c[i] = ARGV[5 + i]
+            outline = ARGV[21]
+            printf "/* Written by pwnbox-theme from the current theme. */\n"
+            printf "@def pw_radius %dpx;\n", radius
+            printf "@def pw_handle_radius %dpx;\n", radius ? 6 : 0
+            # Black and neutral grey surfaces (the same steps as the other apps: panels #0a0a0a,
+            # hover #141414, selection #1c1c1c, lines #2a2a2a on a black theme).
+            def("bg", bg); def("chrome", N(4)); def("chrome_high", N(6)); def("hover", N(8))
+            def("deep", N(0)); def("bg_debug", N(4)); def("graph_bg", N(3))
+            def("select", N(11)); def("line_selected", N(7)); def("shadow", N(0))
+            def("border_soft", N(10)); def("border", N(16));
+            def("scroll", N(18)); def("scroll_hover", N(34))
+            sel_line = N(7)
+            printf "@def pw_line_highlight rgba(%s, 0.16);\n", rgb(fg)
+            # text
+            def("text", N(88)); def("muted", rd(N(66), bg, 6)); def("subtle", rd(N(46), bg, 4.4)); def("disabled", N(36))
+            def("select_text", N(94))
+            # The outline colour: borders of buttons, inputs, menus and lists, tab underline,
+            # graph edges and the selected node. It is never used as a fill.
+            acc = rd(outline, bg, 4.5)
+            def("accent", acc); def("accent_text", acc)
+            def("accent_hi", mix(acc, "ffffff", 28))
+            # syntax roles. Colour is kept where tokens need telling apart (strings, numbers,
+            # registers, imports, cross references); everything frequent is neutral.
+            def("insn", tk(N(84))); def("keyword", tk(N(68))); def("reg", tk(c[6]))
+            def("num", tk(c[3])); def("str", tk(c[2])); def("local", tk(N(70)))
+            def("name_code", tk(N(100))); def("name_data", tk(N(80)))
+            def("name_code_dummy", tk(N(56))); def("name_data_dummy", tk(N(50)))
+            def("import", tk(c[11])); def("libfunc", tk(c[14]))
+            def("xref_code", tk(c[10])); def("xref_data", tk(c[14]))
+            def("punct", tk(N(56)))
+            # the address column, coloured by what the line is: greys, so it never looks like a tint
+            def("pfx_func", rd(N(75), bg, 6)); def("pfx_insn", rd(rd(N(46), bg, 4), sel_line, 4.2)); def("pfx_data", rd(N(34), bg, 3.4)); def("pfx_extern", rd(N(60), bg, 5))
+            comment = rd(N(50), bg, 4.8); comment = rd(comment, sel_line, 4.5)
+            def("comment", comment); def("comment_repeat", tk(N(62))); def("comment_auto", rd(N(40), bg, 4))
+            def("opcode_byte", rd(N(32), bg, 3.4)); def("arrow", rd(N(46), bg, 3.4))
+            def("red", tk(c[1])); def("green", tk(c[2])); def("yellow", tk(c[3])); def("edge", acc)
+            def("red_bright", tk(c[9])); def("green_bright", tk(c[10])); def("yellow_bright", tk(c[11]))
+            # navigation band: lightness tells functions, imports and data apart; red for code
+            def("nav_function", N(78)); def("nav_extern", N(50)); def("nav_data", N(28)); def("nav_code", tk(c[9]))
+            def("nav_function_hl", N(94)); def("nav_extern_hl", N(68)); def("nav_data_hl", N(46))
+            def("nav_undefined", N(15)); def("nav_gap", N(6))
+            # the item under the cursor in the navigation band: lighter shades of the same roles
+            def("libfunc_hl", mix(tk(c[14]), fg, 25)); def("red_hl", mix(tk(c[9]), fg, 25)); def("green_hl", mix(tk(c[10]), fg, 25))
+            # search matches, breakpoints, graph node tints
+            def("match_line", mix(bg, c[3], 18)); def("match_bg", mix(bg, c[3], 38)); def("match_bg_selected", mix(bg, c[3], 55))
+            def("bpt_enabled", mix(bg, c[1], 45)); def("bpt_disabled", mix(bg, c[2], 40)); def("bpt_unavailable", mix(bg, c[3], 40))
+            def("node_green", mix(bg, c[2], 26)); def("node_red", mix(bg, c[1], 26))
+            def("title_selected", N(12)); def("title_current", N(16))
+            # cross reference graph: filled boxes, each lifted until the box text (the
+            # background colour) reads on it
+            def("node_import", lift(c[3])); def("node_code", lift(c[6])); def("node_data", lift(c[2]))
+            def("node_default", lift(N(40))); def("node_text", bg)
+        }' "${args[@]}"
+}
+
+apply_ida() {
+    [ -d "$HOME/.idapro" ] || return 0
+    local tpl="$HOME/.config/ida/pwnbox-theme.css"
+    [ -f "$tpl" ] || return 0
+    local dir="$HOME/.idapro/themes/pwnbox" cfg="$HOME/.idapro/ida-config.json" tmp="$cache/ida-theme.tmp"
+    local root icon muted subtle ext
+    mkdir -p "$dir/icons" "$cache" 2>/dev/null || return 0
+    rm -f "$tmp"
+    # Without a palette the colour block would be missing and IDA would reject
+    # the theme, so keep the previous file in that case.
+    ida_palette_defs >"$tmp" || { rm -f "$tmp"; return 0; }
+    [ -s "$tmp" ] || { rm -f "$tmp"; return 0; }
+    { printf '\n'; cat "$tpl"; } >>"$tmp"
+    if ! cmp -s "$tmp" "$dir/theme.css" 2>/dev/null; then
+        cat "$tmp" >"$dir/theme.css"
+    fi
+    rm -f "$tmp"
+
+    # The drop-down arrow of combo boxes is an image; IDA's own is light grey, so
+    # it is redrawn in the theme's colours (the copy next to the theme is used).
+    root="$(sed -nE 's/.*"ida-install-dir"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/p' "$cfg" 2>/dev/null | head -1)"
+    icon="$root/themes/dark/icons/expand.png"
+    if [ -f "$icon" ] && command -v magick >/dev/null 2>&1; then
+        muted="$(sed -nE 's/^@def pw_muted #([0-9a-f]{6});/\1/p' "$dir/theme.css")"
+        subtle="$(sed -nE 's/^@def pw_subtle #([0-9a-f]{6});/\1/p' "$dir/theme.css")"
+        for ext in "expand:$muted" "expand-disabled:$subtle"; do
+            tmp="$cache/ida-icon.png"
+            magick "$icon" -fill "#${ext#*:}" -colorize 100 "$tmp" 2>/dev/null || continue
+            cmp -s "$tmp" "$dir/icons/${ext%%:*}.png" 2>/dev/null || cat "$tmp" >"$dir/icons/${ext%%:*}.png"
+            rm -f "$tmp"
+        done
+    fi
+
+    select_ida_theme "$root"
+}
+
+# IDA keeps the chosen theme in its settings file (~/.idapro/ida.reg), which it
+# rewrites when it quits, and which carries a checksum, so it is never edited
+# by hand: idat (IDA's console version) writes the value, and only while IDA
+# is closed. If IDA is open, a small watcher waits for it to quit and does it
+# then. Once set it stays, so this is a no-op on later theme changes.
+select_ida_theme() {
+    local root="$1" reg="$HOME/.idapro/ida.reg" py="$cache/ida-select-theme.py"
+    [ -x "$root/idat" ] || return 0
+    if [ -f "$reg" ] && LC_ALL=C grep -qaP 'ThemeName\x00\x06\x00\x00\x00\x01pwnbox' "$reg" 2>/dev/null; then return 0; fi
+    # IDA open (this includes its very first start, before its settings file
+    # exists): wait for it to quit, then select the theme.
+    if pgrep -x ida >/dev/null 2>&1 || pgrep -x idat >/dev/null 2>&1; then
+        (
+            flock -n 9 || exit 0
+            while pgrep -x ida >/dev/null 2>&1 || pgrep -x idat >/dev/null 2>&1; do sleep 1; done
+            select_ida_theme "$root"
+        ) 9>"$cache/ida-select.lock" >/dev/null 2>&1 </dev/null &
+        return 0
+    fi
+    # IDA has never been started: there is no settings file to write to yet.
+    [ -f "$reg" ] || return 0
+    printf 'import ida_registry, ida_pro\nida_registry.reg_write_string("ThemeName", "pwnbox")\nida_pro.qexit(0)\n' >"$py"
+    (
+        cd "$cache" || exit 0
+        export NIX_LD="${NIX_LD:-/run/current-system/sw/share/nix-ld/lib/ld.so}"
+        export NIX_LD_LIBRARY_PATH="${NIX_LD_LIBRARY_PATH:-/run/current-system/sw/share/nix-ld/lib}"
+        timeout 60 "$root/idat" -A -t "-S$py" >/dev/null 2>&1
+    ) || true
+    rm -f "$py"
+}
+
+telegram_running() {
+    pgrep -f '^AyuGram$' >/dev/null 2>&1 || pgrep -x '.AyuGram-wrappe' >/dev/null 2>&1
+}
+
+sync_telegram_fonts() {
+    local settings="$HOME/.local/share/AyuGramDesktop/tdata/ayu_settings.json"
+    [ -f "$settings" ] || return 0
+    command -v jq >/dev/null 2>&1 || return 0
+
+    local app tmp
+    app="$(app_font)"
+    tmp="$cache/.ayu_settings.json.pwnbox-tmp"
+    if jq --arg f "$app" '
+        def setfont(k): if has(k) then .[k] = $f else . end;
+        def setbool(k; v): if has(k) then .[k] = v else . end;
+        setfont("monoFont") | setfont("fontFamily") | setfont("uiFont") | setfont("interfaceFont")
+        | setbool("disableCustomBackgrounds"; false) | setbool("adaptiveCoverColor"; false)
+    ' "$settings" >"$tmp" 2>/dev/null && [ -s "$tmp" ]; then
+        cmp -s "$tmp" "$settings" 2>/dev/null || cat "$tmp" >"$settings"
+    fi
+    rm -f "$tmp"
+}
+
+apply_telegram_theme() {
+    local theme="$HOME/.config/telegram/pwnbox.tdesktop-theme"
+    local tdata="$HOME/.local/share/AyuGramDesktop/tdata"
+    local cfg="$cache/tg-config.toml"
+    local stamp="$cache/telegram-theme.sha"
+    local sum
+
+    [ -f "$theme" ] || return 0
+    [ -d "$tdata" ] || return 0
+    command -v tg-config >/dev/null 2>&1 || return 0
+
+    sum="$(sha256sum "$theme" 2>/dev/null | awk '{print $1}')"
+
+    if [ -n "$sum" ] && [ -f "$stamp" ] && [ "$(cat "$stamp" 2>/dev/null)" = "$sum" ]; then
+        return 0
+    fi
+
+    sync_telegram_fonts
+
+    printf 'tdata = "%s"\n\n[theme]\npath = "%s"\n' "$tdata" "$theme" >"$cfg" 2>/dev/null || return 0
+
+    tg-config --config "$cfg" --offline >/dev/null 2>&1 || true
+
+    [ -n "$sum" ] && printf '%s' "$sum" >"$stamp"
+}
+
+spotify_theme() {
+    local helper="$HOME/.scripts/pwnbox-spotify"
+    command -v spicetify >/dev/null 2>&1 || return 0
+    [ -x "$helper" ] || return 0
+    "$helper" apply >/dev/null 2>&1 || true
+}
+
+equibop_reload() {
+    command -v hyprctl >/dev/null 2>&1 || return 0
+    command -v wtype >/dev/null 2>&1 || return 0
+    pgrep -f 'Equibop/resources/app.asar' >/dev/null 2>&1 || return 0
+
+    local active prev
+    active="$(hyprctl activewindow -j 2>/dev/null | jq -r '.class // empty' 2>/dev/null)"
+    [ "$active" = "equibop" ] && return 0
+    prev="$(hyprctl activewindow -j 2>/dev/null | jq -r '.address // empty' 2>/dev/null)"
+
+    hyprctl dispatch focuswindow "class:^(equibop)$" >/dev/null 2>&1 || return 0
+    sleep 0.35
+    wtype -M ctrl -k r -m ctrl >/dev/null 2>&1 || true
+    if [ -n "$prev" ] && [ "$prev" != "null" ]; then
+        hyprctl dispatch focuswindow "address:${prev}" >/dev/null 2>&1 || true
+    fi
+}
+
+lighten_hex() {
+    local hex="${1#\#}" amt="${2:-6}"
+    local r g b
+    r=$((16#${hex:0:2}))
+    g=$((16#${hex:2:2}))
+    b=$((16#${hex:4:2}))
+    r=$(( r + (255 - r) * amt / 100 ))
+    g=$(( g + (255 - g) * amt / 100 ))
+    b=$(( b + (255 - b) * amt / 100 ))
+    printf '#%02x%02x%02x' "$r" "$g" "$b"
+}
+
+theme_var_hex() {
+    sed -nE "s/^var $1[[:space:]]*=[[:space:]]*\"#?([0-9a-fA-F]{6})\".*/\1/p" \
+        "$HOME/.config/quickshell/Theme.js" 2>/dev/null | head -1
+}
+
+hex_chroma() {
+    local h="${1#\#}" r g b mx mn
+    r=$((16#${h:0:2})); g=$((16#${h:2:2})); b=$((16#${h:4:2}))
+    mx=$r; mn=$r
+    [ "$g" -gt "$mx" ] && mx=$g; [ "$b" -gt "$mx" ] && mx=$b
+    [ "$g" -lt "$mn" ] && mn=$g; [ "$b" -lt "$mn" ] && mn=$b
+    printf '%s' "$((mx - mn))"
+}
+
+apply_borders() {
+    local bg fg brdr act hypr rofi kitty zed
+    bg="$(sed -nE 's/^var bg[[:space:]]*=[[:space:]]*"#?([0-9a-fA-F]{6})".*/\1/p' \
+        "$HOME/.config/quickshell/Theme.js" 2>/dev/null | head -1)"
+    [ -n "$bg" ] || bg="080808"
+    fg="$(sed -nE 's/^var accentSoft[[:space:]]*=[[:space:]]*"#?([0-9a-fA-F]{6})".*/\1/p' \
+        "$HOME/.config/quickshell/Theme.js" 2>/dev/null | head -1)"
+    [ -n "$fg" ] || fg="cccccc"
+    brdr="$(lighten_hex "#$bg" "${border_lighten:-12}")"
+    brdr="${brdr#\#}"
+    # Focused window: the theme's soft white (colour 7), blended towards the
+    # background so it is a slightly dimmed off-white, then tinted with the
+    # palette's most colourful hue. Wallpaper palettes have a neutral white, so
+    # the tint is what makes the border follow each wallpaper. Greyscale
+    # palettes have no colourful hue and simply stay grey.
+    local dom="" domc=0 c cc k
+    for k in red green yellow mauve cyan; do
+        c="$(theme_var_hex "$k")"
+        [ -n "$c" ] || continue
+        cc="$(hex_chroma "$c")"
+        if [ "$cc" -gt "$domc" ]; then dom="$c"; domc="$cc"; fi
+    done
+    mix_hex "#$bg" "#$fg" "${border_active_mix:-80}"
+    act="$MIX_RESULT"
+    if [ "$domc" -ge 24 ]; then
+        local base="$act" tint="${border_active_tint:-25}" cap="${border_active_chroma_max:-45}" cb ca
+        mix_hex "#$base" "#$dom" "$tint"
+        act="$MIX_RESULT"
+        # Keep very vivid palettes pastel: scale the tint back so the border
+        # never gets more colourful than the cap and stays a soft off-white.
+        cb="$(hex_chroma "$base")"
+        ca="$(hex_chroma "$act")"
+        if [ "$ca" -gt "$cap" ] && [ "$cap" -gt "$cb" ]; then
+            mix_hex "#$base" "#$dom" "$((tint * (cap - cb) / (ca - cb)))"
+            act="$MIX_RESULT"
+        fi
+    fi
+
+    # A theme can name its border colour outright (see apply_theme_look). It is
+    # then also the outline of the bar's panels, of notifications and of the
+    # rofi menus (launcher, ALT + S).
+    local panel="$brdr" ov
+    ov="$(cat "$cache/border-override" 2>/dev/null || true)"
+    if [[ "$ov" =~ ^[0-9a-fA-F]{6}$ ]]; then
+        act="$ov"
+        panel="$ov"
+    fi
+
+    hypr="$cache/hyprland.conf"
+    if [ -f "$hypr" ]; then
+        local hypr_tmp="$cache/.hyprland.conf.pwnbox-tmp"
+        if sed '/# pwnbox-borders-start/,/# pwnbox-borders-end/d' "$hypr" 2>/dev/null \
+            | sed -e :a -e '/^[[:space:]]*$/{$d;N;ba' -e '}' >"$hypr_tmp"; then
+            {
+                printf '# pwnbox-borders-start\n'
+                printf 'general {\n'
+                printf '    col.active_border = rgba(%sff)\n' "$act"
+                printf '    col.inactive_border = rgba(%sff)\n' "$brdr"
+                printf '}\n'
+                printf 'windowrule = opacity %s override %s override, match:class ^(kitty)$\n' "$(opacity_value)" "$(opacity_value)"
+                printf 'decoration {\n'
+                printf '    rounding = %s\n' "$(win_radius)"
+                # The window you are working in is solid; the ones around it are
+                # see-through. The terminal is the exception and stays see-through.
+                printf '    active_opacity = 1.0\n'
+                printf '    inactive_opacity = %s\n' "$(opacity_value)"
+                printf '    shadow {\n'
+                printf '        color = rgba(00000055)\n'
+                printf '    }\n'
+                printf '    blur {\n'
+                printf '        enabled = %s\n' "$(blur_hypr)"
+                printf '    }\n'
+                printf '}\n'
+                printf 'animations {\n'
+                printf '    enabled = %s\n' "$(anim_hypr)"
+                printf '}\n# pwnbox-borders-end\n'
+            } >>"$hypr_tmp"
+            if [ "$(tr -cd '{' <"$hypr_tmp" | wc -c)" = "$(tr -cd '}' <"$hypr_tmp" | wc -c)" ]; then
+                mv -f "$hypr_tmp" "$hypr" 2>/dev/null || rm -f "$hypr_tmp"
+            else
+                rm -f "$hypr_tmp"
+            fi
+        else
+            rm -f "$hypr_tmp"
+        fi
+    fi
+
+    rofi="$cache/rofi.rasi"
+    [ -f "$rofi" ] && sed -i -E "s/^([[:space:]]*brdr:[[:space:]]*).*/\1#${panel};/" "$rofi" 2>/dev/null || true
+
+    # The clipboard-history picker (fuzzel) gets the same outline: the theme's
+    # border colour if it names one, otherwise the palette's own (colour 8).
+    local fuzzel="$cache/fuzzel.ini" fz
+    if [ -f "$fuzzel" ]; then
+        if [ "$panel" != "$brdr" ]; then fz="$panel"; else fz="$(theme_var_hex accent)"; fi
+        [ -n "$fz" ] && sed -i -E "s/^(border=)[0-9a-fA-F]{6}/\\1${fz}/" "$fuzzel" 2>/dev/null || true
+    fi
+
+    kitty="$cache/kitty.conf"
+    if [ -f "$kitty" ]; then
+        sed -i -E \
+            -e "s/^(active_border_color[[:space:]]+).*/\1#${brdr}/" \
+            -e "s/^(inactive_border_color[[:space:]]+).*/\1#${brdr}/" \
+            -e "s/^(inactive_tab_background[[:space:]]+).*/\1#${bg}/" \
+            "$kitty" 2>/dev/null || true
+    fi
+
+    zed_dir="$HOME/.config/zed/themes"
+    if [ -d "$zed_dir" ]; then
+        for zed in "$zed_dir"/*.json; do
+            [ -f "$zed" ] || continue
+            sed -i -E \
+                -e "s/^([[:space:]]*\"[^\"]*border[^\"]*\"[[:space:]]*:[[:space:]]*)\"[^\"]*\"/\1\"#${brdr}\"/" \
+                "$zed" 2>/dev/null || true
+            sed -i -E \
+                -e "s/^([[:space:]]*\"border\.transparent\"[[:space:]]*:[[:space:]]*)\"[^\"]*\"/\1\"#${brdr}80\"/" \
+                "$zed" 2>/dev/null || true
+        done
+        zed_pwnbox="$zed_dir/pwnbox.json"
+        if [ -f "$zed_pwnbox" ]; then
+            sed -i -E \
+                -e "s/^([[:space:]]*\"title_bar\.inactive_background\"[[:space:]]*:[[:space:]]*)\"[^\"]*\"/\1\"#${bg}\"/" \
+                -e "s/^([[:space:]]*\"tab\.inactive_background\"[[:space:]]*:[[:space:]]*)\"[^\"]*\"/\1\"#${bg}\"/" \
+                "$zed_pwnbox" 2>/dev/null || true
+
+            if command -v jq >/dev/null 2>&1; then
+                local ig iact hov zed_tmp
+                ig="$(theme_color accent)"
+                iact="$(theme_color fgDim)"
+                hov="$(theme_color fg)"
+                mkdir -p "$cache" 2>/dev/null || true
+                zed_tmp="$cache/.pwnbox-zed.json.pwnbox-tmp"
+                if jq --arg ig "#${ig}" --arg ia "#${iact}" --arg hov "#${hov}" \
+                    '.themes[0].style["editor.indent_guide"] = $ig
+                     | .themes[0].style["editor.indent_guide_active"] = $ia
+                     | .themes[0].style["panel.indent_guide"] = $ig
+                     | .themes[0].style["panel.indent_guide_active"] = $ia
+                     | .themes[0].style["panel.indent_guide_hover"] = $hov' \
+                    "$zed_pwnbox" >"$zed_tmp" 2>/dev/null && [ -s "$zed_tmp" ]; then
+                    mv -f "$zed_tmp" "$zed_pwnbox"
+                else
+                    rm -f "$zed_tmp"
+                fi
+            fi
+        fi
+    fi
+
+    js="$HOME/.config/quickshell/Theme.js"
+    if [ -f "$js" ]; then
+        chmod u+w "$js" 2>/dev/null || true
+        sed -i -e '/^var brdr[[:space:]]*=/d' -e '/^var focus[[:space:]]*=/d' -e '/^var outline[[:space:]]*=/d' "$js" 2>/dev/null || true
+        printf 'var brdr = "#%s";\n' "$brdr" >>"$js" 2>/dev/null || true
+        # The outline of panels, menus and notifications: the theme's border
+        # colour if it names one, otherwise the same quiet shade as `brdr`.
+        printf 'var outline = "#%s";\n' "$panel" >>"$js" 2>/dev/null || true
+        # The focused-window colour, used as the highlight in
+        # the Alt+Tab switcher (quickshell-overlays/Commons/Color.qml).
+        printf 'var focus = "#%s";\n' "$act" >>"$js" 2>/dev/null || true
+    fi
+
+    apply_ui_radius
+    sync_telegram
+    apply_telegram_theme
+    sync_equibop
+    # Each app is done in its own subshell so that one failing (a missing file, an
+    # app not installed) never stops the theme change or the apps after it.
+    (apply_obs) || true
+    (apply_zen) || true
+    (apply_ida) || true
+    apply_fonts
+}
+
+set_wallpaper() {
+    local img="$1"
+    [ -f "$img" ] || return 0
+    sync_hyprlock "$img"
+    # Only replace the running wallpaper when a new one can actually be started
+    # (no display, for example during a rebuild from a console: leave it alone).
+    command -v swaybg >/dev/null 2>&1 || return 0
+    [ -n "${WAYLAND_DISPLAY:-}" ] || return 0
+    pkill -f 'swaybg -i' 2>/dev/null || true
+    setsid swaybg -i "$img" -m fill >/dev/null 2>&1 &
+}
+
+# The lock screen (hyprlock) reads its wallpaper, colours, font and corner
+# radius from this file (~/.config/hypr/hyprlock.conf sources it), so it looks
+# like the desktop it locks. Called with the wallpaper, or with nothing to keep
+# the current one.
+sync_hyprlock() {
+    local img="${1:-}" out="$cache/hyprlock.conf" bg fg dim line field
+    if [ -z "$img" ]; then
+        img="$(cat "$state" 2>/dev/null || true)"
+    fi
+    [ -f "$img" ] || img="$default_wall"
+    bg="$(theme_var_hex bg)"; [ -n "$bg" ] || bg="080808"
+    fg="$(theme_var_hex fg)"; [ -n "$fg" ] || fg="cccccc"
+    dim="$(theme_var_hex fgDim)"; [ -n "$dim" ] || dim="999999"
+    field="$(theme_var_hex bgAlt)"; [ -n "$field" ] || field="$bg"
+    line="$(theme_var_hex outline)"; [ -n "$line" ] || line="$(theme_var_hex brdr)"
+    [ -n "$line" ] || line="252525"
+    mkdir -p "$cache" 2>/dev/null || true
+    {
+        printf '# Written by pwnbox-theme. Edits are overwritten.\n'
+        printf '$lock_wallpaper = %s\n' "$img"
+        printf '$lock_bg = rgb(%s)\n' "$bg"
+        printf '$lock_field = rgb(%s)\n' "$field"
+        printf '$lock_fg = rgb(%s)\n' "$fg"
+        printf '$lock_dim = rgb(%s)\n' "$dim"
+        printf '$lock_outline = rgb(%s)\n' "$line"
+        printf '$lock_font = %s\n' "$(ui_font)"
+        printf '$lock_rounding = %s\n' "$(ui_radius)"
+    } >"$out.tmp" 2>/dev/null && mv -f "$out.tmp" "$out" 2>/dev/null || rm -f "$out.tmp"
+}
+
+reload_apps() {
+    # Poking running programs only makes sense from inside the graphical
+    # session. A rebuild applies the files only; the programs that watch their
+    # files (Discord, Neovim, Zed, Telegram) pick them up by themselves.
+    session_ok || return 0
+    pkill -USR1 kitty 2>/dev/null || true
+    command -v hyprctl >/dev/null 2>&1 && hyprctl reload >/dev/null 2>&1 || true
+    if command -v gsettings >/dev/null 2>&1; then
+        local theme
+        gsettings set org.gnome.desktop.interface color-scheme 'default' >/dev/null 2>&1 || true
+        sleep 0.2
+        gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' >/dev/null 2>&1 || true
+        theme="$(gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null | tr -d "'")"
+        gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita' >/dev/null 2>&1 || true
+        sleep 0.2
+        gsettings set org.gnome.desktop.interface gtk-theme "${theme:-Colloid-Dark-Grey}" >/dev/null 2>&1 || true
+    fi
+    restart_quickshell
+
+    ( spotify_theme ) &
+    ( sleep 0.6; equibop_reload ) &
+}
+
+build_mono_icons() {
+    command -v magick >/dev/null 2>&1 || return 0
+    local dest="$HOME/.local/share/icons/pwnbox-mono"
+    local fg
+    fg="$(sed -nE 's/^var fg[[:space:]]*=[[:space:]]*"#?([0-9a-fA-F]{6})".*/\1/p' \
+        "$HOME/.config/quickshell/Theme.js" 2>/dev/null | head -1)"
+    [ -n "$fg" ] || fg="cccccc"
+    [ -f "$dest/.tint" ] && [ "$(cat "$dest/.tint" 2>/dev/null)" = "$fg" ] && return 0
+
+    local r g b low high
+    r=$((16#${fg:0:2})); g=$((16#${fg:2:2})); b=$((16#${fg:4:2}))
+    low="#$(printf '%02x%02x%02x' $((r * 25 / 100)) $((g * 25 / 100)) $((b * 25 / 100)))"
+    high="#$fg"
+
+    local apps="$dest/48x48/apps"
+    rm -rf "$dest"
+    mkdir -p "$apps"
+    {
+        printf '[Icon Theme]\nName=pwnbox-mono\n'
+        printf 'Comment=Monochrome icons tinted from the active theme\n'
+        printf 'Directories=48x48/apps\n\n[48x48/apps]\nSize=48\nContext=Applications\nType=Fixed\n'
+    } >"$dest/index.theme"
+    printf '%s' "$fg" >"$dest/.tint"
+
+    local -A map=()
+    local dir p bn nm
+    for dir in "$HOME/.local/share/icons" "$HOME/.icons" \
+        /run/current-system/sw/share/icons/Papirus \
+        /run/current-system/sw/share/icons/hicolor \
+        /run/current-system/sw/share/icons/Adwaita; do
+        [ -d "$dir" ] || continue
+        while IFS= read -r p; do
+            bn="${p##*/}"; nm="${bn%.*}"
+            [ -n "${map[$nm]:-}" ] && continue
+            map[$nm]="$p"
+        done < <(find "$dir" \( -type f -o -type l \) 2>/dev/null | grep -E '\.(png|svg)$')
+    done
+
+    local -A want=()
+    local d icon
+    for d in /run/current-system/sw/share/applications \
+        "/etc/profiles/per-user/$USER/share/applications" \
+        "$HOME/.local/share/applications" \
+        "$HOME/.nix-profile/share/applications"; do
+        [ -d "$d" ] || continue
+        while IFS= read -r icon; do
+            [ -n "$icon" ] && want["$icon"]=1
+        done < <(grep -h '^Icon=' "$d"/*.desktop 2>/dev/null | cut -d= -f2-)
+    done
+
+    local name src
+    for name in "${!want[@]}"; do
+        case "$name" in
+            /*) [ -f "$name" ] && src="$name" || src="" ;;
+            *) src="${map[$name]:-}" ;;
+        esac
+        [ -n "$src" ] || continue
+        magick "$src" -background none -resize 64x64 -gravity center -extent 64x64 \
+            -colorspace Gray -auto-level +level-colors "$low,$high" \
+            "$apps/$name.png" 2>/dev/null || true
+    done
+}
+
+install_palette() {
+    local pair src dst
+    for pair in \
+        "pwnbox-kitty.conf:kitty.conf" \
+        "pwnbox-rofi.rasi:rofi.rasi" \
+        "pwnbox-fuzzel.ini:fuzzel.ini" \
+        "pwnbox-hyprland.conf:hyprland.conf" \
+        "pwnbox-gtk.css:gtk-colors.css" \
+        "pwnbox-colors.json:colors.json" \
+        "pwnbox-nvim.lua:nvim-palette.lua"; do
+        src="$wal_out/${pair%%:*}"
+        dst="$cache/${pair##*:}"
+        cp_atomic "$src" "$dst"
+    done
+    # A theme's own GTK colours (themes/<Name>/gtk.css) go after the generated
+    # ones, so they win.
+    if [ -s "$cache/gtk-override.css" ]; then
+        { printf '\n'; cat "$cache/gtk-override.css"; } >>"$cache/gtk-colors.css"
+    fi
+    if [ -f "$wal_out/pwnbox-theme.js" ]; then
+        sync_quickshell "$wal_out/pwnbox-theme.js"
+    fi
+    sync_zed "$wal_out/pwnbox-zed.json"
+}
+
+
+custom_theme_dirs() {
+    local d
+    [ -d "$themes_dir" ] || return 0
+    for d in "$themes_dir"/*/; do
+        [ -d "$d" ] || continue
+        [ -f "${d}theme.conf" ] || continue
+        printf '%s\n' "${d%/}"
+    done
+}
+
+theme_dir_of() {
+    local d
+    for d in "$themes_dir"/*/; do
+        [ -d "$d" ] || continue
+        [ "$(basename "${d%/}")" = "$1" ] && { printf '%s' "${d%/}"; return 0; }
+    done
+    return 1
+}
+
+conf_get() {
+    local file="$1" key="$2" line k v
+    [ -f "$file" ] || return 0
+    while IFS= read -r line || [ -n "$line" ]; do
+        line="${line#"${line%%[![:space:]]*}"}"
+        case "$line" in '' | '#'* | ';'*) continue ;; esac
+        case "$line" in *=*) ;; *) continue ;; esac
+        k="${line%%=*}"
+        v="${line#*=}"
+        k="${k%"${k##*[![:space:]]}"}"
+        v="${v#"${v%%[![:space:]]*}"}"
+        v="${v%"${v##*[![:space:]]}"}"
+        if [ "$k" = "$key" ]; then
+            printf '%s' "$v"
+            return 0
+        fi
+    done <"$file"
+}
+
+norm_hex() {
+    local c="${1#\#}"
+    case "$c" in
+        [0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F])
+            printf '#%s' "$c" ;;
+        *) return 1 ;;
+    esac
+}
+
+mono_color() {
+    sed -nE "s/^[[:space:]]*${1}[[:space:]]*=[[:space:]]*\"(#?[0-9a-fA-F]{6})\".*/\1/p" \
+        "$mono/nvim-palette.lua" 2>/dev/null | head -1
+}
+
+scheme_color() {
+    local conf="$1" key="$2" fb="$3" v
+    v="$(conf_get "$conf" "$key")"
+    if [ -n "$v" ]; then
+        norm_hex "$v"
+    else
+        v="$(mono_color "$fb")"
+        [ -n "$v" ] && norm_hex "$v"
+    fi
+}
+
+build_custom_scheme() {
+    local conf="$1" out="$2" i key c bg fg cursor
+    local -A col=()
+    for i in $(seq 0 15); do
+        key="color$i"
+        c="$(scheme_color "$conf" "$key" "$key")" || return 1
+        col[$key]="$c"
+    done
+    bg="$(scheme_color "$conf" background bg)" || return 1
+    fg="$(scheme_color "$conf" foreground fg)" || return 1
+    cursor="$(scheme_color "$conf" cursor fg)" || return 1
+
+    {
+        printf '{\n  "special": {\n'
+        printf '    "background": "%s",\n    "foreground": "%s",\n    "cursor": "%s"\n' "$bg" "$fg" "$cursor"
+        printf '  },\n  "colors": {\n'
+        for i in $(seq 0 15); do
+            key="color$i"
+            if [ "$i" -lt 15 ]; then
+                printf '    "%s": "%s",\n' "$key" "${col[$key]}"
+            else
+                printf '    "%s": "%s"\n' "$key" "${col[$key]}"
+            fi
+        done
+        printf '  }\n}\n'
+    } >"$out.tmp" || { rm -f "$out.tmp"; return 1; }
+    mv -f "$out.tmp" "$out" 2>/dev/null || { rm -f "$out.tmp"; return 1; }
+}
+
+custom_theme_wallpaper() {
+    local dir="$1" wp f
+    wp="$(conf_get "$dir/theme.conf" wallpaper)"
+    if [ -n "$wp" ]; then
+        case "$wp" in
+            /*) [ -f "$wp" ] && { printf '%s' "$wp"; return 0; } ;;
+            *) [ -f "$dir/$wp" ] && { printf '%s' "$dir/$wp"; return 0; } ;;
+        esac
+    fi
+    for f in "$dir"/*.png "$dir"/*.jpg "$dir"/*.jpeg "$dir"/*.webp; do
+        [ -f "$f" ] && { printf '%s' "$f"; return 0; }
+    done
+    printf '%s' "$default_wall"
+}
+
+do_custom() {
+    local dir="${1%/}" quiet="${2:-}" conf name scheme wallpaper
+    conf="$dir/theme.conf"
+    [ -f "$conf" ] || { [ -n "$quiet" ] || notify "Theme" "No theme.conf in $(basename "$dir")"; return 1; }
+    command -v wal >/dev/null 2>&1 || { [ -n "$quiet" ] || notify "Theme" "pywal not installed"; return 1; }
+    name="$(conf_get "$conf" name)"
+    [ -n "$name" ] || name="$(basename "$dir")"
+
+    mkdir -p "$cache"
+    scheme="$cache/custom-scheme.json"
+    if ! build_custom_scheme "$conf" "$scheme"; then
+        [ -n "$quiet" ] || notify "Theme" "Invalid colours in $(basename "$dir")/theme.conf"
+        return 1
+    fi
+    if ! wal --theme "$scheme" -n -s -e -q >/dev/null 2>&1; then
+        [ -n "$quiet" ] || notify "Theme" "pywal failed"
+        return 1
+    fi
+
+    # Record what is being applied first: the steps below read it (the lock
+    # screen's wallpaper, the theme's name in the generated files).
+    wallpaper="$(custom_theme_wallpaper "$dir")"
+    printf '%s\n' "$wallpaper" >"$state"
+    printf '%s\n' "$(basename "$dir")" >"$custom_state"
+    theme_signature "$dir" >"$cache/theme-signature"
+
+    apply_theme_look "$conf"
+    install_palette
+    apply_borders
+    ( build_mono_icons >/dev/null 2>&1 & )
+
+    set_wallpaper "$wallpaper"
+    reload_apps
+    [ -n "$quiet" ] || notify "Theme" "$name"
+}
+
+custom_label() {
+    local cur dir name
+    cur="$(read_state "$custom_state" "")"
+    [ -n "$cur" ] || return 0
+    while IFS= read -r dir; do
+        [ "$(basename "$dir")" = "$cur" ] || continue
+        name="$(conf_get "$dir/theme.conf" name)"
+        [ -n "$name" ] || name="$cur"
+        printf '  (%s)' "$name"
+        return 0
+    done < <(custom_theme_dirs)
+}
+
+custom() {
+    local listf mapf dir conf name wp thumb choice
+    listf="$(mktemp)"; mapf="$(mktemp)"
+    mkdir -p "$thumb_dir"
+    # Make any missing thumbnails first, several at a time, so a long list of
+    # large wallpapers opens in about a second instead of one by one.
+    custom_theme_dirs | while IFS= read -r dir; do
+        printf '%s\tcustom-%s\n' "$(custom_theme_wallpaper "$dir")" "$(basename "$dir")"
+    done | warm_thumbs || true
+    while IFS= read -r dir; do
+        [ -n "$dir" ] || continue
+        conf="$dir/theme.conf"
+        name="$(conf_get "$conf" name)"
+        [ -n "$name" ] || name="$(basename "$dir")"
+        wp="$(custom_theme_wallpaper "$dir")"
+        printf '%s\t%s\n' "$name" "$dir" >>"$mapf"
+        thumb="$(make_thumb "$wp" "custom-$(basename "$dir")")"
+        if [ -n "$thumb" ]; then
+            printf '%s\0icon\x1f%s\n' "$name" "$thumb" >>"$listf"
+        else
+            printf '%s\n' "$name" >>"$listf"
+        fi
+    done < <(custom_theme_dirs)
+
+    if [ ! -s "$listf" ]; then
+        rm -f "$listf" "$mapf"
+        notify "Theme" "No custom themes in $themes_dir"
+        return 0
+    fi
+
+    choice="$(
+        rofi -dmenu -i -show-icons -no-custom \
+            -kb-move-char-back Control+b -kb-move-char-forward Control+f \
+            -kb-row-left Left -kb-row-right Right \
+            -p "Custom theme" -theme "$custom_cfg" <"$listf" || true
+    )"
+    dir="$(awk -F'\t' -v n="$choice" '$1 == n { print $2; exit }' "$mapf")"
+    rm -f "$listf" "$mapf"
+    [ -n "$choice" ] || return 0
+    [ -n "$dir" ] || return 0
+    do_custom "$dir"
+}
+
+monochrome() {
+    local dir
+    if dir="$(theme_dir_of Monochrome)"; then
+        do_custom "$dir"
+        return 0
+    fi
+    seed_monochrome
+    apply_theme_look
+    sync_zed "$mono/pwnbox.json"
+    apply_borders
+    ( build_mono_icons >/dev/null 2>&1 & )
+    set_wallpaper "$default_wall"
+    printf '%s\n' "$default_wall" >"$state"
+    rm -f "$custom_state"
+    reload_apps
+    notify "Theme" "Monochrome"
+}
+
+# True for black-and-white wallpapers (no measurable colour in the image).
+wallpaper_is_greyscale() {
+    local img="$1" c
+    command -v magick >/dev/null 2>&1 || return 1
+    c="$(magick "${img}[0]" -alpha off -resize 128x128! -colorspace sRGB \
+        -fx 'max(max(r,g),b)-min(min(r,g),b)' -format '%[fx:mean]' info: 2>/dev/null)" || return 1
+    awk -v c="${c:-1}" 'BEGIN { exit !(c < 0.01) }'
+}
+
+# pywal gives greyscale images a red cast (maroon background, pinkish accents).
+# Rewrite the palette it just made as pure greys of the same lightness.
+neutralize_palette() {
+    local src="$wal_out/colors.json" out="$cache/neutral-scheme.json"
+    [ -f "$src" ] || return 1
+    command -v jq >/dev/null 2>&1 || return 1
+    jq '
+        def hv: ascii_downcase | explode | map(if . >= 97 then . - 87 else . - 48 end);
+        def byte($i): .[$i:$i+2] | hv | .[0] * 16 + .[1];
+        def hx: "0123456789abcdef" as $d | (. / 16 | floor) as $a | (. % 16) as $b | $d[$a:$a+1] + $d[$b:$b+1];
+        def grey:
+            if type == "string" and test("^#[0-9a-fA-F]{6}$") then
+                ltrimstr("#") as $h
+                | ((0.299 * ($h | byte(0)) + 0.587 * ($h | byte(2)) + 0.114 * ($h | byte(4))) | round | hx) as $l
+                | "#\($l)\($l)\($l)"
+            else . end;
+        { special: (.special | map_values(grey)), colors: (.colors | map_values(grey)) }
+    ' "$src" >"$out.tmp" 2>/dev/null && [ -s "$out.tmp" ] && mv -f "$out.tmp" "$out" || { rm -f "$out.tmp"; return 1; }
+}
+
+# A palette extracted from a dark or nearly grey picture can come out too dim to
+# read: the bar's red, green and yellow turn into dark greys on a dark
+# background. Lift every colour that is below a minimum contrast against the
+# background (text 9:1, the soft white 7.5:1, colours 1-6 4.8:1, their bright
+# versions 5.5:1) by raising its lightness, which keeps its hue and saturation.
+# Writes the result to legible-scheme.json; fails when nothing needed lifting.
+make_legible() {
+    local src="$wal_out/colors.json" out="$cache/legible-scheme.json"
+    [ -f "$src" ] || return 1
+    command -v jq >/dev/null 2>&1 || return 1
+    jq '
+        def hexd: ascii_downcase | explode | map(if . >= 97 then . - 87 else . - 48 end);
+        def byte($h; $i): ($h[$i:$i+2] | hexd) as $d | $d[0] * 16 + $d[1];
+        def rgb: ltrimstr("#") as $h | [byte($h; 0), byte($h; 2), byte($h; 4)];
+        def hx2: "0123456789abcdef" as $d
+            | (round | if . < 0 then 0 elif . > 255 then 255 else . end) as $n
+            | ($n / 16 | floor) as $a | ($n % 16) as $b
+            | $d[$a:$a+1] + $d[$b:$b+1];
+        def tohex: "#" + (map(hx2) | join(""));
+        def lin: . / 255 | if . <= 0.04045 then . / 12.92 else pow((. + 0.055) / 1.055; 2.4) end;
+        def lum: rgb | map(lin) | .[0] * 0.2126 + .[1] * 0.7152 + .[2] * 0.0722;
+        def ratio($a; $b):
+            ($a | lum) as $x | ($b | lum) as $y
+            | if $x > $y then ($x + 0.05) / ($y + 0.05) else ($y + 0.05) / ($x + 0.05) end;
+        def rgb2hsl:
+            (.[0] / 255) as $r | (.[1] / 255) as $g | (.[2] / 255) as $b
+            | ([$r, $g, $b] | max) as $mx | ([$r, $g, $b] | min) as $mn
+            | (($mx + $mn) / 2) as $l
+            | if $mx == $mn then [0, 0, $l]
+              else ($mx - $mn) as $d
+                | (if $l > 0.5 then $d / (2 - $mx - $mn) else $d / ($mx + $mn) end) as $s
+                | ((if $mx == $r then ($g - $b) / $d + (if $g < $b then 6 else 0 end)
+                    elif $mx == $g then ($b - $r) / $d + 2
+                    else ($r - $g) / $d + 4 end) / 6) as $h
+                | [$h, $s, $l]
+              end;
+        def hue2rgb($p; $q; $t):
+            ($t | if . < 0 then . + 1 elif . > 1 then . - 1 else . end) as $t
+            | if $t < 1/6 then $p + ($q - $p) * 6 * $t
+              elif $t < 1/2 then $q
+              elif $t < 2/3 then $p + ($q - $p) * (2/3 - $t) * 6
+              else $p end;
+        def hsl2rgb:
+            .[0] as $h | .[1] as $s | .[2] as $l
+            | if $s == 0 then [$l, $l, $l] | map(. * 255)
+              else (if $l < 0.5 then $l * (1 + $s) else $l + $s - $l * $s end) as $q
+                | (2 * $l - $q) as $p
+                | [hue2rgb($p; $q; $h + 1/3), hue2rgb($p; $q; $h), hue2rgb($p; $q; $h - 1/3)] | map(. * 255)
+              end;
+        def lift($bg; $want):
+            if ratio(.; $bg) >= $want then .
+            else (rgb | rgb2hsl) as $hsl
+              | reduce range(0; 64) as $i ($hsl;
+                  if ratio(hsl2rgb | tohex; $bg) >= $want then . else .[2] = ([.[2] + 0.015, 0.97] | min) end)
+              | hsl2rgb | tohex
+            end;
+
+        { special: .special, colors: .colors } as $before
+        | .special.background as $bg
+        | if ($bg | lum) > 0.3 then empty
+          else
+            ( reduce ("color1", "color2", "color3", "color4", "color5", "color6") as $k (.; .colors[$k] |= lift($bg; 4.8))
+            | reduce ("color9", "color10", "color11", "color12", "color13", "color14") as $k (.; .colors[$k] |= lift($bg; 5.5))
+            | .colors.color7 |= lift($bg; 7.5)
+            | .colors.color15 |= lift($bg; 9)
+            | .special.foreground |= lift($bg; 9)
+            ) as $after
+            | { special: $after.special, colors: $after.colors } as $out
+            | if $out == $before then empty else $out end
+          end
+    ' "$src" >"$out.tmp" 2>/dev/null && [ -s "$out.tmp" ] && mv -f "$out.tmp" "$out" || { rm -f "$out.tmp"; return 1; }
+}
+
+# The folder in dotfiles/themes whose wallpaper is exactly this picture, if
+# there is one. Those themes have a hand-made palette that is better than
+# anything extracted automatically, so picking their wallpaper uses it.
+curated_theme_for() {
+    local img="$1" dir wp
+    [ -f "$img" ] || return 1
+    while IFS= read -r dir; do
+        wp="$(custom_theme_wallpaper "$dir")"
+        [ -f "$wp" ] || continue
+        [ "$wp" = "$default_wall" ] && continue
+        if cmp -s "$img" "$wp"; then
+            printf '%s' "$dir"
+            return 0
+        fi
+    done < <(custom_theme_dirs)
+    return 1
+}
+
+apply() {
+    local img="$1" curated
+    [ -f "$img" ] || { notify "Theme" "Not found: $img"; return 1; }
+    # PWNBOX_PYWAL_ONLY=1 skips the hand-made theme and extracts a palette anyway.
+    if [ -z "${PWNBOX_PYWAL_ONLY:-}" ] && curated="$(curated_theme_for "$img")"; then
+        do_custom "$curated"
+        return
+    fi
+    command -v wal >/dev/null 2>&1 || { notify "Theme" "pywal not installed"; return 1; }
+    mkdir -p "$cache"
+    if ! wal -i "$img" -n -s -e -q >/dev/null 2>&1; then
+        notify "Theme" "pywal failed"; return 1
+    fi
+    if wallpaper_is_greyscale "$img" && neutralize_palette; then
+        wal --theme "$cache/neutral-scheme.json" -n -s -e -q >/dev/null 2>&1 || true
+    fi
+    if make_legible; then
+        wal --theme "$cache/legible-scheme.json" -n -s -e -q >/dev/null 2>&1 || true
+    fi
+    apply_theme_look
+    install_palette
+    apply_borders
+    ( build_mono_icons >/dev/null 2>&1 & )
+    printf '%s\n' "$img" >"$state"
+    rm -f "$custom_state"
+    set_wallpaper "$img"
+    reload_apps
+    notify "Theme" "$(basename "$img")"
+}
+
+restore() {
+    # The bar starts at login with the files that are there now.
+    record_bar_stamp
+    local img="$default_wall" cur dir
+    cur="$(read_state "$custom_state" "")"
+    if [ -n "$cur" ]; then
+        while IFS= read -r dir; do
+            [ "$(basename "$dir")" = "$cur" ] || continue
+            # No palette yet, or the very first start on a new machine (the
+            # flake seeds the theme name and this marker; see dotfiles.nix).
+            if [ ! -f "$cache/colors.json" ] || [ -e "$cache/first-run" ]; then
+                rm -f "$cache/first-run"
+                do_custom "$dir" quiet
+                return 0
+            fi
+            img="$(custom_theme_wallpaper "$dir")"
+            printf '%s\n' "$img" >"$state"
+            set_wallpaper "$img"
+            borders
+            ( build_mono_icons >/dev/null 2>&1 & )
+            return 0
+        done < <(custom_theme_dirs)
+        rm -f "$custom_state"
+    fi
+    if [ -f "$state" ] && [ -f "$(cat "$state" 2>/dev/null)" ]; then
+        img="$(cat "$state")"
+    fi
+    [ -f "$cache/colors.json" ] || seed_monochrome
+    printf '%s\n' "$img" >"$state"
+    set_wallpaper "$img"
+    borders
+    ( build_mono_icons >/dev/null 2>&1 & )
+}
+
+# A fingerprint of everything a custom theme is made of.
+theme_signature() {
+    local dir="${1%/}" f
+    for f in theme.conf zed.json discord.css telegram.tdesktop-theme nvim.lua zen.css obs.txt gtk.css; do
+        if [ -f "$dir/$f" ]; then cat "$dir/$f"; fi
+    done 2>/dev/null | sha256sum 2>/dev/null | awk '{print $1}'
+}
+
+# If the current custom theme's files are not the ones it was applied from (a
+# rebuild brought a newer version of the theme), apply it again in full, so
+# its colours, look and app themes are the new ones. Returns 0 if it did.
+reapply_changed_theme() {
+    local cur dir sig
+    cur="$(read_state "$custom_state" "")"
+    [ -n "$cur" ] || return 1
+    dir="$(theme_dir_of "$cur")" || return 1
+    sig="$(theme_signature "$dir")"
+    [ -n "$sig" ] || return 1
+    [ "$sig" = "$(cat "$cache/theme-signature" 2>/dev/null || true)" ] && return 1
+    do_custom "$dir" quiet || return 1
+    return 0
+}
+
+# After a rebuild, whatever happened above, the bar must be up when this returns.
+borders() {
+    local rc=0
+    borders_apply || rc=$?
+    [ -z "${PWNBOX_REBUILD:-}" ] || ensure_bar
+    return "$rc"
+}
+
+borders_apply() {
+    reapply_changed_theme && return 0
+    # Keeps IDA's theme file current after a rebuild or at login, not only on a
+    # theme change (it does nothing when IDA is not installed).
+    (apply_ida) || true
+    apply_borders
+    command -v hyprctl >/dev/null 2>&1 && hyprctl reload >/dev/null 2>&1 || true
+}
+
+make_thumb() {
+    local src="$1" key="${2:-}" out
+    [ -f "$src" ] || return 0
+    [ -n "$key" ] || key="$(basename "$src")"
+    out="$thumb_dir/${key}.png"
+    if [ ! -f "$out" ] || [ "$src" -nt "$out" ]; then
+        if command -v magick >/dev/null 2>&1; then
+            magick "$src" -auto-orient -resize '256x256^' -gravity center -extent 256x256 "$out" >/dev/null 2>&1 || true
+        elif command -v convert >/dev/null 2>&1; then
+            convert "$src" -auto-orient -resize '256x256^' -gravity center -extent 256x256 "$out" >/dev/null 2>&1 || true
+        fi
+    fi
+    [ -f "$out" ] && printf '%s' "$out"
+    return 0
+}
+
+# Build the missing thumbnails for a list of "image<TAB>key" lines (the key may
+# be empty to use the file's own name), eight at a time. Large wallpapers take
+# about half a second each, so one by one a full menu would take several
+# seconds the first time it is opened.
+warm_thumbs() {
+    local src key n=0
+    while IFS=$'\t' read -r src key; do
+        [ -n "$src" ] || continue
+        ( make_thumb "$src" "$key" >/dev/null 2>&1 || true ) &
+        n=$((n + 1))
+        if [ $((n % 8)) -eq 0 ]; then wait; fi
+    done
+    wait
+    return 0
+}
+
+bar_styles=(
+    "islands|Islands (boxed groups)"
+    "floating|Floating islands"
+    "flat|Classic flat"
+    "pill|Centered pill"
+    "capsule|Rounded capsule"
+    "bottom|Bottom dock"
+    "split|Split pills"
+    "blocky|Blocky groups"
+    "ghost|Ghost outlines"
+    "minipills|Mini pills"
+    "noir|Noir pills (launcher, workspaces, clock, tray, power)"
+)
+
+# A theme may bring a "look" with it: optional keys in its theme.conf that go
+# beyond colours.
+#
+#   border         = #rrggbb   focused-window border and panel outline
+#   bar_style      = noir      one of the ALT + S bar styles
+#   window_radius  = 0         window corner radius, px
+#   ui_radius      = 0         bar/panel/menu corner radius, px
+#   transparency   = 100       window opacity, %
+#   app_font       = <name>    application (monospace) font, one of the
+#                              ALT + S "Application font" names
+#
+# They are applied when the theme is chosen. What you had before is kept in
+# $cache/look-saved and put back as soon as you pick a theme without a look, so
+# a theme never changes your settings for good. Called with a theme.conf, or
+# with nothing for wallpaper themes.
+look_keys=(bar_style window_radius ui_radius transparency app_font)
+look_file() {
+    case "$1" in
+        bar_style) printf '%s' "$style_state" ;;
+        window_radius) printf '%s' "$radius_state" ;;
+        ui_radius) printf '%s' "$uir_state" ;;
+        transparency) printf '%s' "$opacity_file" ;;
+        app_font) printf '%s' "$font_app_state" ;;
+    esac
+}
+look_valid() {
+    local key="$1" v="$2" e
+    case "$key" in
+        bar_style)
+            for e in "${bar_styles[@]}"; do [ "${e%%|*}" = "$v" ] && return 0; done
+            return 1 ;;
+        window_radius | ui_radius) case "$v" in '' | *[!0-9]*) return 1 ;; esac; [ "$v" -le 40 ] ;;
+        transparency) case "$v" in '' | *[!0-9]*) return 1 ;; esac; [ "$v" -ge 30 ] && [ "$v" -le 100 ] ;;
+        app_font)
+            for e in "${font_choices[@]}"; do [ "$e" = "$v" ] && return 0; done
+            return 1 ;;
+    esac
+}
+apply_theme_look() {
+    local conf="${1:-}" saved="$cache/look-saved" key v f any=0 b=""
+    mkdir -p "$cache"
+    if [ -n "$conf" ] && [ -f "$conf" ]; then
+        b="$(conf_get "$conf" border)"
+        for key in "${look_keys[@]}"; do
+            v="$(conf_get "$conf" "$key")"
+            if [ -n "$v" ] && look_valid "$key" "$v"; then any=1; fi
+        done
+    fi
+    # Put back what a previous look-theme replaced before doing anything else.
+    if [ -d "$saved" ]; then
+        for key in "${look_keys[@]}"; do
+            f="$(look_file "$key")"
+            if [ -f "$saved/$key" ]; then cat "$saved/$key" >"$f"; fi
+            # The setting had never been chosen before: back to "not chosen".
+            if [ -f "$saved/$key.unset" ]; then rm -f "$f"; fi
+        done
+        rm -rf "$saved"
+    fi
+    # The theme's own editor colours for Zed, if it has any (see sync_zed).
+    if [ -n "$conf" ] && [ -f "$(dirname "$conf")/zed.json" ] && jq -e . "$(dirname "$conf")/zed.json" >/dev/null 2>&1; then
+        cat "$(dirname "$conf")/zed.json" >"$cache/zed-override.json"
+    else
+        rm -f "$cache/zed-override.json"
+    fi
+    # ... its own Zen, OBS and GTK additions (see apply_zen, obs_theme_css and
+    # install_palette) ...
+    local pair
+    for pair in "zen.css:zen-override.css" "obs.txt:obs-override.txt" "gtk.css:gtk-override.css"; do
+        if [ -n "$conf" ] && [ -s "$(dirname "$conf")/${pair%%:*}" ]; then
+            cat "$(dirname "$conf")/${pair%%:*}" >"$cache/${pair##*:}"
+        else
+            rm -f "$cache/${pair##*:}"
+        fi
+    done
+    # ... its own Neovim colours (see config/nvim/lua/config/theme.lua) ...
+    if [ -n "$conf" ] && [ -s "$(dirname "$conf")/nvim.lua" ]; then
+        cat "$(dirname "$conf")/nvim.lua" >"$cache/nvim-override.lua"
+    else
+        rm -f "$cache/nvim-override.lua"
+    fi
+    # ... its own Telegram colours (see sync_telegram) ...
+    if [ -n "$conf" ] && [ -s "$(dirname "$conf")/telegram.tdesktop-theme" ]; then
+        cat "$(dirname "$conf")/telegram.tdesktop-theme" >"$cache/telegram-override.tdesktop-theme"
+    else
+        rm -f "$cache/telegram-override.tdesktop-theme"
+    fi
+    # ... and its own Discord colours (see discord_palette_css).
+    if [ -n "$conf" ] && [ -s "$(dirname "$conf")/discord.css" ]; then
+        cat "$(dirname "$conf")/discord.css" >"$cache/discord-override.css"
+    else
+        rm -f "$cache/discord-override.css"
+    fi
+    if [[ "$b" =~ ^#?[0-9a-fA-F]{6}$ ]]; then
+        printf '%s' "${b#\#}" >"$cache/border-override"
+    else
+        rm -f "$cache/border-override"
+    fi
+    if [ "$any" -eq 1 ]; then
+        mkdir -p "$saved"
+        for key in "${look_keys[@]}"; do
+            v="$(conf_get "$conf" "$key")"
+            [ -n "$v" ] && look_valid "$key" "$v" || continue
+            f="$(look_file "$key")"
+            if [ -f "$f" ]; then cat "$f" >"$saved/$key"; else : >"$saved/$key.unset"; fi
+            printf '%s' "$v" >"$f"
+        done
+    fi
+    if command -v qs >/dev/null 2>&1; then
+        qs ipc call barstyle set "$(read_state "$style_state" islands)" >/dev/null 2>&1 || true
+    fi
+}
+
+set_barstyle() {
+    local id="$1" label="$2"
+    mkdir -p "$cache"
+    printf '%s' "$id" >"$style_state"
+    if command -v qs >/dev/null 2>&1; then
+        qs ipc call barstyle set "$id" >/dev/null 2>&1 || true
+    fi
+    notify "Bar style" "$label"
+}
+
+barstyle() {
+    local entry id choice preview
+    choice="$(
+        for entry in "${bar_styles[@]}"; do
+            id="${entry%%|*}"
+            preview="$previews_dir/$id.png"
+            if [ -f "$preview" ]; then
+                printf '%s\0icon\037%s\n' "$id" "$preview"
+            else
+                printf '%s\n' "$id"
+            fi
+        done | rofi -dmenu -i -show-icons -no-custom \
+            -kb-move-char-back Control+b -kb-move-char-forward Control+f \
+            -kb-row-left Left -kb-row-right Right \
+            -p "Bar style" -theme "$barstyle_cfg" || true
+    )"
+    [ -n "$choice" ] || return 0
+    for entry in "${bar_styles[@]}"; do
+        id="${entry%%|*}"
+        if [ "$choice" = "$id" ]; then
+            set_barstyle "$id" "${entry##*|}"
+            return 0
+        fi
+    done
+}
+
+pick() {
+    mkdir -p "$wall_dir" "$thumb_dir"
+    shopt -s nullglob
+    local f choice t d name listf mapf
+    listf="$(mktemp)"
+    mapf="$(mktemp)"
+    local -A seen=()
+    d="$wall_dir"
+    if [ -d "$d" ]; then
+        for f in "$d"/*.png "$d"/*.jpg "$d"/*.jpeg "$d"/*.webp; do
+            printf '%s\t\n' "$f"
+        done | warm_thumbs || true
+        for f in "$d"/*.png "$d"/*.jpg "$d"/*.jpeg "$d"/*.webp; do
+            name="$(basename "$f")"
+            [ -n "${seen[$name]:-}" ] && continue
+            seen[$name]=1
+            printf '%s\t%s\n' "$name" "$f" >>"$mapf"
+            t="$(make_thumb "$f")"
+            if [ -n "$t" ]; then
+                printf '%s\0icon\037%s\n' "$name" "$t" >>"$listf"
+            else
+                printf '%s\n' "$name" >>"$listf"
+            fi
+        done
+    fi
+    if [ ! -s "$listf" ]; then
+        rm -f "$listf" "$mapf"
+        notify "Wallpaper" "No wallpapers found"
+        return 0
+    fi
+    choice="$(
+        rofi -dmenu -i -show-icons -no-custom \
+            -kb-move-char-back Control+b -kb-move-char-forward Control+f \
+            -kb-row-left Left -kb-row-right Right \
+            -p "Wallpaper" -theme "$picker_cfg" <"$listf" || true
+    )"
+    f="$(awk -F'\t' -v n="$choice" '$1 == n { print $2; exit }' "$mapf")"
+    rm -f "$listf" "$mapf"
+    [ -n "$choice" ] || return 0
+    [ -n "$f" ] || return 0
+    apply "$f"
+}
+
+
+radius_values=(0 2 4 6 8 9 10 12 14 16 20 24)
+size_values=(7 8 9 10 11 12 13 14 15 16 18 20)
+
+menu_section() {
+    printf '%s\0nonselectable\x1ftrue\x1fpermanent\x1ftrue\n' \
+        "<span foreground='#$(theme_color fgDim)' weight='bold' size='small'>$1</span>"
+}
+
+choose_value() {
+    local prompt="$1" current="$2"; shift 2
+    printf '%s\n' "$@" | rofi -dmenu -i -no-custom -select "$current" \
+        -p "$prompt" -theme "$menu_cfg" || true
+}
+
+choose_window_radius() {
+    local choice
+    choice="$(choose_value "Window radius" "$(win_radius)" "${radius_values[@]}")"
+    [ -n "$choice" ] || return 0
+    mkdir -p "$cache"
+    printf '%s' "$choice" >"$radius_state"
+    apply_borders
+    command -v hyprctl >/dev/null 2>&1 && hyprctl reload >/dev/null 2>&1 || true
+    notify "Window radius" "${choice}px"
+}
+
+choose_ui_radius() {
+    local choice
+    choice="$(choose_value "UI radius" "$(ui_radius)" "${radius_values[@]}")"
+    [ -n "$choice" ] || return 0
+    mkdir -p "$cache"
+    printf '%s' "$choice" >"$uir_state"
+    apply_ui_radius
+    restart_quickshell
+    notify "UI radius" "${choice}px"
+}
+
+choose_blur() {
+    local choice msg
+    choice="$(choose_value "Blur" "$(blur_state)" on off)"
+    [ -n "$choice" ] || return 0
+    mkdir -p "$cache"
+    printf '%s' "$choice" >"$blur_file"
+    msg="Disabled"
+    if [ "$choice" = "on" ]; then
+        msg="Enabled"
+        if [ "$(opacity)" = "100" ]; then
+            printf '%s' 92 >"$opacity_file"
+            msg="Enabled · transparency 92%"
+        fi
+    fi
+    apply_borders
+    command -v hyprctl >/dev/null 2>&1 && hyprctl reload >/dev/null 2>&1 || true
+    notify "Blur" "$msg"
+}
+
+choose_opacity() {
+    local choice
+    choice="$(choose_value "Transparency" "$(opacity)" 100 96 92 88 85 80 70 60 50)"
+    [ -n "$choice" ] || return 0
+    mkdir -p "$cache"
+    printf '%s' "$choice" >"$opacity_file"
+    apply_borders
+    command -v hyprctl >/dev/null 2>&1 && hyprctl reload >/dev/null 2>&1 || true
+    if [ "$choice" = "100" ] && [ "$(blur_state)" = "on" ]; then
+        notify "Transparency" "100% — blur has nothing to see through"
+    else
+        notify "Transparency" "${choice}%"
+    fi
+}
+
+choose_animations() {
+    local choice
+    choice="$(choose_value "Animations" "$(anim_state)" on off)"
+    [ -n "$choice" ] || return 0
+    mkdir -p "$cache"
+    printf '%s' "$choice" >"$anim_file"
+    apply_borders
+    command -v hyprctl >/dev/null 2>&1 && hyprctl reload >/dev/null 2>&1 || true
+    notify "Animations" "$([ "$choice" = "on" ] && printf 'Enabled' || printf 'Disabled')"
+}
+
+choose_ui_font() {
+    local choice
+    choice="$(choose_value "System font" "$(ui_font)" "${font_choices[@]}")"
+    [ -n "$choice" ] || return 0
+    mkdir -p "$cache"
+    printf '%s' "$choice" >"$font_ui_state"
+    apply_fonts
+    reload_fonts
+    notify "System font" "$choice"
+}
+
+choose_app_font() {
+    local choice
+    choice="$(choose_value "Application font" "$(app_font)" "${font_choices[@]}")"
+    [ -n "$choice" ] || return 0
+    mkdir -p "$cache"
+    printf '%s' "$choice" >"$font_app_state"
+    apply_fonts
+    reload_fonts
+    notify "Application font" "$choice"
+}
+
+choose_ui_font_size() {
+    local choice
+    choice="$(choose_value "System font size" "$(ui_font_size)" "${size_values[@]}")"
+    [ -n "$choice" ] || return 0
+    mkdir -p "$cache"
+    printf '%s' "$choice" >"$font_ui_size_state"
+    apply_fonts
+    reload_fonts
+    notify "System font size" "${choice}px"
+}
+
+choose_app_font_size() {
+    local choice
+    choice="$(choose_value "Application font size" "$(app_font_size)" "${size_values[@]}")"
+    [ -n "$choice" ] || return 0
+    mkdir -p "$cache"
+    printf '%s' "$choice" >"$font_app_size_state"
+    apply_fonts
+    reload_fonts
+    notify "Application font size" "${choice}px"
+}
+
+menu() {
+    local choice
+    choice="$(
+        {
+            menu_section "THEME"
+            printf 'Pywal\n'
+            printf 'Custom%s\n' "$(custom_label)"
+            menu_section "BAR"
+            printf 'Style\n'
+            menu_section "WINDOWS"
+            printf 'Corner radius: %spx\n' "$(win_radius)"
+            menu_section "INTERFACE"
+            printf 'UI corner radius: %spx\n' "$(ui_radius)"
+            printf 'System font: %s\n' "$(ui_font)"
+            printf 'System font size: %s\n' "$(ui_font_size)"
+            printf 'Application font: %s\n' "$(app_font)"
+            printf 'Application font size: %s\n' "$(app_font_size)"
+            menu_section "EFFECTS"
+            printf 'Blur: %s\n' "$(blur_label)"
+            printf 'Transparency: %s\n' "$(opacity_label)"
+            printf 'Animations: %s\n' "$(anim_label)"
+        } | rofi -dmenu -i -no-custom -markup-rows -p "Theme" -theme "$menu_cfg" || true
+    )"
+    [ -n "$choice" ] || return 0
+    case "$choice" in
+        "Pywal")                  pick ;;
+        "Custom"*)                custom ;;
+        "Style")                  barstyle ;;
+        "Corner radius:"*)        choose_window_radius ;;
+        "UI corner radius:"*)     choose_ui_radius ;;
+        "System font:"*)          choose_ui_font ;;
+        "System font size:"*)     choose_ui_font_size ;;
+        "Application font:"*)     choose_app_font ;;
+        "Application font size:"*) choose_app_font_size ;;
+        "Blur:"*)                 choose_blur ;;
+        "Transparency:"*)         choose_opacity ;;
+        "Animations:"*)           choose_animations ;;
+    esac
+}
+
+case "${1:-menu}" in
+    menu)       menu ;;
+    pick | wallpaper) pick ;;
+    custom | themes) custom ;;
+    monochrome) monochrome ;;
+    apply)      apply "${2:?usage: pwnbox-theme apply <image>}" ;;
+    barstyle)   barstyle ;;
+    radius)     choose_window_radius ;;
+    uiradius)   choose_ui_radius ;;
+    uifont | systemfont) choose_ui_font ;;
+    appfont | monofont)  choose_app_font ;;
+    uifontsize | systemsize) choose_ui_font_size ;;
+    appfontsize | appsize)   choose_app_font_size ;;
+    blur)       choose_blur ;;
+    transparency | opacity) choose_opacity ;;
+    animations | animation) choose_animations ;;
+    borders)    borders ;;
+    ida)        apply_ida ;;
+    restart-bar) restart_quickshell ;;
+    icons)      build_mono_icons ;;
+    restore)    restore ;;
+    -h | --help | help)
+        sed -n '2,21p' "$0"
+        ;;
+    *)
+        echo "unknown command: $1" >&2
+        exit 2
+        ;;
+esac

@@ -1,0 +1,28 @@
+--- a/arch/x86/kvm/vmx/vmx.c	2026-10-08 18:33:00.280823614 +0200
++++ b/arch/x86/kvm/vmx/vmx.c	2026-10-08 18:35:33.417140941 +0200
+@@ -6105,6 +6105,16 @@
+ 				     vmx_get_msr_imm_reg(vcpu));
+ }
+ 
++static int handle_vmcall_ud(struct kvm_vcpu *vcpu)
++{
++	/* Bare metal raises #UD on guest VMCALL; mimic it for userspace. */
++	if (vmx_get_cpl(vcpu) != 0) {
++		kvm_queue_exception(vcpu, UD_VECTOR);
++		return 1;
++	}
++	return kvm_emulate_hypercall(vcpu);
++}
++
+ /*
+  * The exit handlers return 1 if the exit was handled fully and guest execution
+  * may resume.  Otherwise they set the kvm_run parameter to indicate what needs
+@@ -6126,7 +6136,7 @@
+ 	[EXIT_REASON_INVD]		      = kvm_emulate_invd,
+ 	[EXIT_REASON_INVLPG]		      = handle_invlpg,
+ 	[EXIT_REASON_RDPMC]                   = kvm_emulate_rdpmc,
+-	[EXIT_REASON_VMCALL]                  = kvm_emulate_hypercall,
++	[EXIT_REASON_VMCALL]                  = handle_vmcall_ud,
+ 	[EXIT_REASON_VMCLEAR]		      = handle_vmx_instruction,
+ 	[EXIT_REASON_VMLAUNCH]		      = handle_vmx_instruction,
+ 	[EXIT_REASON_VMPTRLD]		      = handle_vmx_instruction,

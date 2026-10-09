@@ -1,0 +1,34 @@
+Stop intercepting #DB (DB_VECTOR) in the KVM Intel VMX exception bitmap.
+
+VMAware's VM::HYPERVISOR_HOOK check (vmaware.hpp:15078, labelled
+"Checking hypervisor interception") runs four sub-tests, one of which
+sets a DR0 hardware watchpoint and executes `__movsb` across it,
+expecting the hardware to fire #DB directly into the user's vectored
+exception handler. By default KVM intercepts #DB in the VMX exception
+bitmap, round-trips the exception through the host, and re-injects it.
+The round-trip can miss or re-order the trap inside `REP MOVSB`, which
+the check interprets as EPT-level hypervisor hooking.
+
+Clearing (1u << DB_VECTOR) from the default bitmap in
+`vmx_update_exception_bitmap()` lets hardware DR0 fire directly into
+the guest. The guest's own debuggers (that program DR0..DR3 and
+process #DB themselves) continue to work unchanged — the exception
+simply bypasses KVM.
+
+Trade-off: KVM's in-kernel gdbstub (`guest_debug & KVM_GUESTDBG_USE_HW_BP`,
+driven by QEMU's `-gdb` option) loses #DB interception. We do not use
+it. If needed in future, that path still explicitly adds DB_VECTOR to
+the bitmap via the surrounding guest_debug plumbing, so the kernel
+behaviour degrades gracefully.
+
+--- a/arch/x86/kvm/vmx/vmx.c
++++ b/arch/x86/kvm/vmx/vmx.c
+@@ -817,7 +817,7 @@ void vmx_update_exception_bitmap(struct kvm_vcpu *vcpu)
+ 	u32 eb;
+
+ 	eb = (1u << PF_VECTOR) | (1u << UD_VECTOR) | (1u << MC_VECTOR) |
+-	     (1u << DB_VECTOR) | (1u << AC_VECTOR);
++	     (1u << AC_VECTOR);
+ 	/*
+ 	 * #VE isn't used for VMX.  To test against unexpected changes
+ 	 * related to #VE for VMX, intercept unexpected #VE and warn on it.

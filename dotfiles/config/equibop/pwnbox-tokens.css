@@ -1,0 +1,485 @@
+/* pwnbox palette for Discord (Equibop).
+ *
+ * `pwnbox-theme` writes this file into quickCss.css after the colours it
+ * recolours in theme-base.css, preceded by a `:root { --pw-... }` block with
+ * the current theme's colours. Everything here only refers to those --pw-*
+ * variables, so a theme change swaps one small block.
+ *
+ * Discord builds its colours from named tokens (--background-base-low,
+ * --text-default, --control-primary-background-default ...). They are
+ * redefined here with !important because Discord sets them several times
+ * (.theme-dark, .theme-darker, .visual-refresh ...) and the later or more
+ * specific one would otherwise win.
+ */
+
+:root {
+  /* Surfaces, darkest to lightest. Chat is --pw-chat; the lists around it are
+     darker, the menus on top are lighter. */
+  --pw-lowest:  var(--pw-deep);
+  --pw-lower:   var(--pw-bg);
+  --pw-low:     color-mix(in oklab, var(--pw-bg) 50%, var(--pw-card));
+  --pw-chat:    var(--pw-card);
+  --pw-higher:  color-mix(in oklab, var(--pw-card) 96%, var(--pw-fg));
+  --pw-highest: color-mix(in oklab, var(--pw-card) 93%, var(--pw-fg));
+  /* Text, strongest to weakest. */
+  --pw-text:    color-mix(in oklab, var(--pw-fg) 92%, var(--pw-bg));
+  --pw-muted:   color-mix(in oklab, var(--pw-fg) 70%, var(--pw-bg));
+  --pw-subtle:  color-mix(in oklab, var(--pw-fg) 54%, var(--pw-bg));
+  /* Lines and hover fills are the text colour at low opacity. */
+  --pw-line:    color-mix(in srgb, var(--pw-fg) 14%, transparent);
+  --pw-line-2:  color-mix(in srgb, var(--pw-fg) 8%, transparent);
+  --pw-line-3:  color-mix(in srgb, var(--pw-fg) 26%, transparent);
+  --pw-hover:   color-mix(in srgb, var(--pw-fg) 8%, transparent);
+  --pw-press:   color-mix(in srgb, var(--pw-fg) 13%, transparent);
+  --pw-select:  color-mix(in srgb, var(--pw-fg) 17%, transparent);
+}
+
+:root,
+html,
+body,
+.visual-refresh,
+.theme-dark,
+.theme-darker,
+.theme-midnight,
+.theme-light,
+[data-popout-root] {
+
+  /* Neutral scale: Discord's own greys, 1 (lightest) to 100 (black), re-drawn between the text colour and the surfaces */
+  --neutral-1: color-mix(in oklab, var(--pw-fg) 100%, var(--pw-highest)) !important;
+  --neutral-2: color-mix(in oklab, var(--pw-fg) 98%, var(--pw-highest)) !important;
+  --neutral-3: color-mix(in oklab, var(--pw-fg) 97%, var(--pw-highest)) !important;
+  --neutral-4: color-mix(in oklab, var(--pw-fg) 95%, var(--pw-highest)) !important;
+  --neutral-5: color-mix(in oklab, var(--pw-fg) 93%, var(--pw-highest)) !important;
+  --neutral-6: color-mix(in oklab, var(--pw-fg) 92%, var(--pw-highest)) !important;
+  --neutral-7: color-mix(in oklab, var(--pw-fg) 90%, var(--pw-highest)) !important;
+  --neutral-8: color-mix(in oklab, var(--pw-fg) 88%, var(--pw-highest)) !important;
+  --neutral-9: color-mix(in oklab, var(--pw-fg) 86%, var(--pw-highest)) !important;
+  --neutral-10: color-mix(in oklab, var(--pw-fg) 85%, var(--pw-highest)) !important;
+  --neutral-11: color-mix(in oklab, var(--pw-fg) 83%, var(--pw-highest)) !important;
+  --neutral-12: color-mix(in oklab, var(--pw-fg) 81%, var(--pw-highest)) !important;
+  --neutral-13: color-mix(in oklab, var(--pw-fg) 80%, var(--pw-highest)) !important;
+  --neutral-14: color-mix(in oklab, var(--pw-fg) 78%, var(--pw-highest)) !important;
+  --neutral-15: color-mix(in oklab, var(--pw-fg) 76%, var(--pw-highest)) !important;
+  --neutral-16: color-mix(in oklab, var(--pw-fg) 75%, var(--pw-highest)) !important;
+  --neutral-17: color-mix(in oklab, var(--pw-fg) 73%, var(--pw-highest)) !important;
+  --neutral-18: color-mix(in oklab, var(--pw-fg) 71%, var(--pw-highest)) !important;
+  --neutral-19: color-mix(in oklab, var(--pw-fg) 69%, var(--pw-highest)) !important;
+  --neutral-20: color-mix(in oklab, var(--pw-fg) 68%, var(--pw-highest)) !important;
+  --neutral-21: color-mix(in oklab, var(--pw-fg) 66%, var(--pw-highest)) !important;
+  --neutral-22: color-mix(in oklab, var(--pw-fg) 64%, var(--pw-highest)) !important;
+  --neutral-23: color-mix(in oklab, var(--pw-fg) 63%, var(--pw-highest)) !important;
+  --neutral-24: color-mix(in oklab, var(--pw-fg) 61%, var(--pw-highest)) !important;
+  --neutral-25: color-mix(in oklab, var(--pw-fg) 59%, var(--pw-highest)) !important;
+  --neutral-26: color-mix(in oklab, var(--pw-fg) 58%, var(--pw-highest)) !important;
+  --neutral-27: color-mix(in oklab, var(--pw-fg) 56%, var(--pw-highest)) !important;
+  --neutral-28: color-mix(in oklab, var(--pw-fg) 54%, var(--pw-highest)) !important;
+  --neutral-29: color-mix(in oklab, var(--pw-fg) 53%, var(--pw-highest)) !important;
+  --neutral-30: color-mix(in oklab, var(--pw-fg) 51%, var(--pw-highest)) !important;
+  --neutral-31: color-mix(in oklab, var(--pw-fg) 49%, var(--pw-highest)) !important;
+  --neutral-32: color-mix(in oklab, var(--pw-fg) 47%, var(--pw-highest)) !important;
+  --neutral-33: color-mix(in oklab, var(--pw-fg) 46%, var(--pw-highest)) !important;
+  --neutral-34: color-mix(in oklab, var(--pw-fg) 44%, var(--pw-highest)) !important;
+  --neutral-35: color-mix(in oklab, var(--pw-fg) 42%, var(--pw-highest)) !important;
+  --neutral-36: color-mix(in oklab, var(--pw-fg) 41%, var(--pw-highest)) !important;
+  --neutral-37: color-mix(in oklab, var(--pw-fg) 39%, var(--pw-highest)) !important;
+  --neutral-38: color-mix(in oklab, var(--pw-fg) 37%, var(--pw-highest)) !important;
+  --neutral-39: color-mix(in oklab, var(--pw-fg) 36%, var(--pw-highest)) !important;
+  --neutral-40: color-mix(in oklab, var(--pw-fg) 34%, var(--pw-highest)) !important;
+  --neutral-41: color-mix(in oklab, var(--pw-fg) 32%, var(--pw-highest)) !important;
+  --neutral-42: color-mix(in oklab, var(--pw-fg) 31%, var(--pw-highest)) !important;
+  --neutral-43: color-mix(in oklab, var(--pw-fg) 29%, var(--pw-highest)) !important;
+  --neutral-44: color-mix(in oklab, var(--pw-fg) 27%, var(--pw-highest)) !important;
+  --neutral-45: color-mix(in oklab, var(--pw-fg) 25%, var(--pw-highest)) !important;
+  --neutral-46: color-mix(in oklab, var(--pw-fg) 24%, var(--pw-highest)) !important;
+  --neutral-47: color-mix(in oklab, var(--pw-fg) 22%, var(--pw-highest)) !important;
+  --neutral-48: color-mix(in oklab, var(--pw-fg) 20%, var(--pw-highest)) !important;
+  --neutral-49: color-mix(in oklab, var(--pw-fg) 19%, var(--pw-highest)) !important;
+  --neutral-50: color-mix(in oklab, var(--pw-fg) 17%, var(--pw-highest)) !important;
+  --neutral-51: color-mix(in oklab, var(--pw-fg) 15%, var(--pw-highest)) !important;
+  --neutral-52: color-mix(in oklab, var(--pw-fg) 14%, var(--pw-highest)) !important;
+  --neutral-53: color-mix(in oklab, var(--pw-fg) 12%, var(--pw-highest)) !important;
+  --neutral-54: color-mix(in oklab, var(--pw-fg) 10%, var(--pw-highest)) !important;
+  --neutral-55: color-mix(in oklab, var(--pw-fg) 8%, var(--pw-highest)) !important;
+  --neutral-56: color-mix(in oklab, var(--pw-fg) 7%, var(--pw-highest)) !important;
+  --neutral-57: color-mix(in oklab, var(--pw-fg) 5%, var(--pw-highest)) !important;
+  --neutral-58: color-mix(in oklab, var(--pw-fg) 3%, var(--pw-highest)) !important;
+  --neutral-59: color-mix(in oklab, var(--pw-fg) 2%, var(--pw-highest)) !important;
+  --neutral-60: color-mix(in oklab, var(--pw-fg) 0%, var(--pw-highest)) !important;
+  --neutral-61: color-mix(in oklab, var(--pw-highest) 98%, var(--pw-deep)) !important;
+  --neutral-62: color-mix(in oklab, var(--pw-highest) 95%, var(--pw-deep)) !important;
+  --neutral-63: color-mix(in oklab, var(--pw-highest) 92%, var(--pw-deep)) !important;
+  --neutral-64: color-mix(in oklab, var(--pw-highest) 90%, var(--pw-deep)) !important;
+  --neutral-65: color-mix(in oklab, var(--pw-highest) 88%, var(--pw-deep)) !important;
+  --neutral-66: color-mix(in oklab, var(--pw-highest) 85%, var(--pw-deep)) !important;
+  --neutral-67: color-mix(in oklab, var(--pw-highest) 82%, var(--pw-deep)) !important;
+  --neutral-68: color-mix(in oklab, var(--pw-highest) 80%, var(--pw-deep)) !important;
+  --neutral-69: color-mix(in oklab, var(--pw-highest) 78%, var(--pw-deep)) !important;
+  --neutral-70: color-mix(in oklab, var(--pw-highest) 75%, var(--pw-deep)) !important;
+  --neutral-71: color-mix(in oklab, var(--pw-highest) 72%, var(--pw-deep)) !important;
+  --neutral-72: color-mix(in oklab, var(--pw-highest) 70%, var(--pw-deep)) !important;
+  --neutral-73: color-mix(in oklab, var(--pw-highest) 68%, var(--pw-deep)) !important;
+  --neutral-74: color-mix(in oklab, var(--pw-highest) 65%, var(--pw-deep)) !important;
+  --neutral-75: color-mix(in oklab, var(--pw-highest) 62%, var(--pw-deep)) !important;
+  --neutral-76: color-mix(in oklab, var(--pw-highest) 60%, var(--pw-deep)) !important;
+  --neutral-77: color-mix(in oklab, var(--pw-highest) 58%, var(--pw-deep)) !important;
+  --neutral-78: color-mix(in oklab, var(--pw-highest) 55%, var(--pw-deep)) !important;
+  --neutral-79: color-mix(in oklab, var(--pw-highest) 52%, var(--pw-deep)) !important;
+  --neutral-80: color-mix(in oklab, var(--pw-highest) 50%, var(--pw-deep)) !important;
+  --neutral-81: color-mix(in oklab, var(--pw-highest) 48%, var(--pw-deep)) !important;
+  --neutral-82: color-mix(in oklab, var(--pw-highest) 45%, var(--pw-deep)) !important;
+  --neutral-83: color-mix(in oklab, var(--pw-highest) 42%, var(--pw-deep)) !important;
+  --neutral-84: color-mix(in oklab, var(--pw-highest) 40%, var(--pw-deep)) !important;
+  --neutral-85: color-mix(in oklab, var(--pw-highest) 38%, var(--pw-deep)) !important;
+  --neutral-86: color-mix(in oklab, var(--pw-highest) 35%, var(--pw-deep)) !important;
+  --neutral-87: color-mix(in oklab, var(--pw-highest) 32%, var(--pw-deep)) !important;
+  --neutral-88: color-mix(in oklab, var(--pw-highest) 30%, var(--pw-deep)) !important;
+  --neutral-89: color-mix(in oklab, var(--pw-highest) 28%, var(--pw-deep)) !important;
+  --neutral-90: color-mix(in oklab, var(--pw-highest) 25%, var(--pw-deep)) !important;
+  --neutral-91: color-mix(in oklab, var(--pw-highest) 22%, var(--pw-deep)) !important;
+  --neutral-92: color-mix(in oklab, var(--pw-highest) 20%, var(--pw-deep)) !important;
+  --neutral-93: color-mix(in oklab, var(--pw-highest) 18%, var(--pw-deep)) !important;
+  --neutral-94: color-mix(in oklab, var(--pw-highest) 15%, var(--pw-deep)) !important;
+  --neutral-95: color-mix(in oklab, var(--pw-highest) 12%, var(--pw-deep)) !important;
+  --neutral-96: color-mix(in oklab, var(--pw-highest) 10%, var(--pw-deep)) !important;
+  --neutral-97: color-mix(in oklab, var(--pw-highest) 8%, var(--pw-deep)) !important;
+  --neutral-98: color-mix(in oklab, var(--pw-highest) 5%, var(--pw-deep)) !important;
+  --neutral-99: color-mix(in oklab, var(--pw-highest) 2%, var(--pw-deep)) !important;
+  --neutral-100: color-mix(in oklab, var(--pw-highest) 0%, var(--pw-deep)) !important;
+
+  /* Accent scale (the 'blurple' of Discord) */
+  --brand-100: color-mix(in oklab, var(--pw-accent) 34%, white) !important;
+  --brand-130: color-mix(in oklab, var(--pw-accent) 39%, white) !important;
+  --brand-160: color-mix(in oklab, var(--pw-accent) 44%, white) !important;
+  --brand-200: color-mix(in oklab, var(--pw-accent) 51%, white) !important;
+  --brand-230: color-mix(in oklab, var(--pw-accent) 56%, white) !important;
+  --brand-260: color-mix(in oklab, var(--pw-accent) 61%, white) !important;
+  --brand-300: color-mix(in oklab, var(--pw-accent) 67%, white) !important;
+  --brand-330: color-mix(in oklab, var(--pw-accent) 72%, white) !important;
+  --brand-345: color-mix(in oklab, var(--pw-accent) 75%, white) !important;
+  --brand-360: color-mix(in oklab, var(--pw-accent) 77%, white) !important;
+  --brand-400: color-mix(in oklab, var(--pw-accent) 84%, white) !important;
+  --brand-430: color-mix(in oklab, var(--pw-accent) 89%, white) !important;
+  --brand-460: color-mix(in oklab, var(--pw-accent) 93%, white) !important;
+  --brand-500: var(--pw-accent) !important;
+  --brand-530: color-mix(in oklab, var(--pw-accent) 95%, black) !important;
+  --brand-560: color-mix(in oklab, var(--pw-accent) 90%, black) !important;
+  --brand-600: color-mix(in oklab, var(--pw-accent) 82%, black) !important;
+  --brand-630: color-mix(in oklab, var(--pw-accent) 77%, black) !important;
+  --brand-660: color-mix(in oklab, var(--pw-accent) 72%, black) !important;
+  --brand-700: color-mix(in oklab, var(--pw-accent) 65%, black) !important;
+  --brand-730: color-mix(in oklab, var(--pw-accent) 60%, black) !important;
+  --brand-760: color-mix(in oklab, var(--pw-accent) 54%, black) !important;
+  --brand-800: color-mix(in oklab, var(--pw-accent) 48%, black) !important;
+  --brand-830: color-mix(in oklab, var(--pw-accent) 42%, black) !important;
+  --brand-860: color-mix(in oklab, var(--pw-accent) 37%, black) !important;
+  --brand-900: color-mix(in oklab, var(--pw-accent) 30%, black) !important;
+  --brand-05a: color-mix(in srgb, var(--pw-accent) 5%, transparent) !important;
+  --brand-10a: color-mix(in srgb, var(--pw-accent) 10%, transparent) !important;
+  --brand-15a: color-mix(in srgb, var(--pw-accent) 15%, transparent) !important;
+  --brand-20a: color-mix(in srgb, var(--pw-accent) 20%, transparent) !important;
+  --brand-25a: color-mix(in srgb, var(--pw-accent) 25%, transparent) !important;
+  --brand-30a: color-mix(in srgb, var(--pw-accent) 30%, transparent) !important;
+  --brand-35a: color-mix(in srgb, var(--pw-accent) 35%, transparent) !important;
+  --brand-40a: color-mix(in srgb, var(--pw-accent) 40%, transparent) !important;
+  --brand-45a: color-mix(in srgb, var(--pw-accent) 45%, transparent) !important;
+  --brand-50a: color-mix(in srgb, var(--pw-accent) 50%, transparent) !important;
+  --brand-55a: color-mix(in srgb, var(--pw-accent) 55%, transparent) !important;
+  --brand-60a: color-mix(in srgb, var(--pw-accent) 60%, transparent) !important;
+  --brand-65a: color-mix(in srgb, var(--pw-accent) 65%, transparent) !important;
+  --brand-70a: color-mix(in srgb, var(--pw-accent) 70%, transparent) !important;
+  --brand-75a: color-mix(in srgb, var(--pw-accent) 75%, transparent) !important;
+  --brand-80a: color-mix(in srgb, var(--pw-accent) 80%, transparent) !important;
+  --brand-85a: color-mix(in srgb, var(--pw-accent) 85%, transparent) !important;
+  --brand-90a: color-mix(in srgb, var(--pw-accent) 90%, transparent) !important;
+  --brand-95a: color-mix(in srgb, var(--pw-accent) 95%, transparent) !important;
+  --brand-500-hsl: var(--pw-accent-hsl) !important;
+  --blurple-50-hsl: var(--pw-accent-hsl) !important;
+  --blurple-50: var(--pw-accent) !important;
+
+  /* Surfaces */
+  --app-frame-background: var(--pw-lowest) !important;
+  --app-frame-border: var(--pw-line-2) !important;
+  --background-base-lowest: var(--pw-lowest) !important;
+  --background-base-lower: var(--pw-lower) !important;
+  --background-base-low: var(--pw-low) !important;
+  --background-surface-high: var(--pw-chat) !important;
+  --background-surface-higher: var(--pw-higher) !important;
+  --background-surface-highest: var(--pw-highest) !important;
+  --background-accent: var(--pw-highest) !important;
+  --background-floating: var(--pw-higher) !important;
+  --background-secondary-alt: var(--pw-low) !important;
+  --background-mobile-primary: var(--pw-chat) !important;
+  --chat-background: var(--pw-chat) !important;
+  --chat-background-default: var(--pw-chat) !important;
+  --channel-background-default: var(--pw-low) !important;
+  --channeltextarea-background: var(--pw-higher) !important;
+  --background-mod-muted: color-mix(in srgb, var(--pw-fg) 4%, transparent) !important;
+  --background-mod-subtle: color-mix(in srgb, var(--pw-fg) 7%, transparent) !important;
+  --background-mod-normal: color-mix(in srgb, var(--pw-fg) 11%, transparent) !important;
+  --background-mod-strong: color-mix(in srgb, var(--pw-fg) 16%, transparent) !important;
+  --background-code: color-mix(in oklab, var(--pw-chat) 70%, var(--pw-deep)) !important;
+  --background-brand: var(--pw-accent) !important;
+  --background-voice-muted: color-mix(in srgb, var(--pw-red) 20%, transparent) !important;
+
+  /* Text and icons */
+  --text-default: var(--pw-text) !important;
+  --text-strong: var(--pw-fg) !important;
+  --text-muted: var(--pw-muted) !important;
+  --text-subtle: var(--pw-subtle) !important;
+  --text-link: var(--pw-link) !important;
+  --text-brand: var(--pw-link) !important;
+  --text-invert: var(--pw-bg) !important;
+  --chat-text-muted: var(--pw-muted) !important;
+  --channel-icon: var(--pw-muted) !important;
+  --channels-default: var(--pw-muted) !important;
+  --channel-text-area-placeholder: var(--pw-subtle) !important;
+  --interactive-text-default: var(--pw-muted) !important;
+  --interactive-text-hover: var(--pw-text) !important;
+  --interactive-text-active: var(--pw-fg) !important;
+  --interactive-icon-default: var(--pw-muted) !important;
+  --interactive-icon-hover: var(--pw-text) !important;
+  --interactive-icon-active: var(--pw-fg) !important;
+  --interactive-muted: var(--pw-subtle) !important;
+  --interactive-background-default: transparent !important;
+  --interactive-background-hover: var(--pw-hover) !important;
+  --interactive-background-active: var(--pw-press) !important;
+  --interactive-background-selected: var(--pw-select) !important;
+  --interactive-accent-background-default: color-mix(in srgb, var(--pw-accent) 14%, transparent) !important;
+  --interactive-accent-background-hover: color-mix(in srgb, var(--pw-accent) 22%, transparent) !important;
+  --interactive-accent-background-active: color-mix(in srgb, var(--pw-accent) 30%, transparent) !important;
+  --interactive-accent-background-selected: color-mix(in srgb, var(--pw-accent) 26%, transparent) !important;
+
+  /* Borders, inputs, cards, scrollbars */
+  --border-normal: var(--pw-line) !important;
+  --border-subtle: var(--pw-line-2) !important;
+  --border-strong: var(--pw-line-3) !important;
+  --border-muted: var(--pw-line-2) !important;
+  --border-focus: var(--pw-accent) !important;
+  --input-background-default: var(--pw-lowest) !important;
+  --input-border-default: var(--pw-line) !important;
+  --input-border-hover: var(--pw-line-3) !important;
+  --input-border-active: var(--pw-accent) !important;
+  --input-border-readonly: var(--pw-line-2) !important;
+  --input-icon-default: var(--pw-muted) !important;
+  --input-placeholder-text-default: var(--pw-subtle) !important;
+  --input-text-default: var(--pw-fg) !important;
+  --input-background-error-default: color-mix(in srgb, var(--pw-red) 12%, transparent) !important;
+  --input-border-error-default: var(--pw-red) !important;
+  --input-text-error-default: var(--pw-red-text) !important;
+  --card-background-default: var(--pw-higher) !important;
+  --card-border-default: var(--pw-line-2) !important;
+  --card-secondary-bg: var(--pw-higher) !important;
+  --card-secondary-pressed-bg: var(--pw-highest) !important;
+  --card-primary-pressed-bg: var(--pw-highest) !important;
+  --scrollbar-auto-scrollbar-color-thumb: color-mix(in srgb, var(--pw-fg) 22%, transparent) !important;
+  --scrollbar-auto-thumb: color-mix(in srgb, var(--pw-fg) 22%, transparent) !important;
+  --scrollbar-thin-thumb: color-mix(in srgb, var(--pw-fg) 22%, transparent) !important;
+  --scrollbar-auto-scrollbar-color-track: transparent !important;
+  --scrollbar-auto-track: transparent !important;
+  --scrollbar-thin-track: transparent !important;
+
+  /* Buttons */
+  --control-primary-background-default: var(--pw-accent) !important;
+  --control-primary-border-default: transparent !important;
+  --control-primary-text-default: var(--pw-on-accent) !important;
+  --control-primary-icon-default: var(--pw-on-accent) !important;
+  --control-primary-background-hover: color-mix(in oklab, var(--pw-accent) 88%, white) !important;
+  --control-primary-border-hover: transparent !important;
+  --control-primary-text-hover: var(--pw-on-accent) !important;
+  --control-primary-icon-hover: var(--pw-on-accent) !important;
+  --control-primary-background-active: color-mix(in oklab, var(--pw-accent) 85%, black) !important;
+  --control-primary-border-active: transparent !important;
+  --control-primary-text-active: var(--pw-on-accent) !important;
+  --control-primary-icon-active: var(--pw-on-accent) !important;
+  --control-secondary-background-default: var(--pw-press) !important;
+  --control-secondary-border-default: transparent !important;
+  --control-secondary-text-default: var(--pw-fg) !important;
+  --control-secondary-icon-default: var(--pw-fg) !important;
+  --control-secondary-background-hover: var(--pw-select) !important;
+  --control-secondary-border-hover: transparent !important;
+  --control-secondary-text-hover: var(--pw-fg) !important;
+  --control-secondary-icon-hover: var(--pw-fg) !important;
+  --control-secondary-background-active: color-mix(in srgb, var(--pw-fg) 22%, transparent) !important;
+  --control-secondary-border-active: transparent !important;
+  --control-secondary-text-active: var(--pw-fg) !important;
+  --control-secondary-icon-active: var(--pw-fg) !important;
+  --control-critical-primary-background-default: var(--pw-red) !important;
+  --control-critical-primary-border-default: transparent !important;
+  --control-critical-primary-text-default: var(--pw-on-red) !important;
+  --control-critical-primary-icon-default: var(--pw-on-red) !important;
+  --control-critical-primary-background-hover: color-mix(in oklab, var(--pw-red) 88%, white) !important;
+  --control-critical-primary-border-hover: transparent !important;
+  --control-critical-primary-text-hover: var(--pw-on-red) !important;
+  --control-critical-primary-icon-hover: var(--pw-on-red) !important;
+  --control-critical-primary-background-active: color-mix(in oklab, var(--pw-red) 85%, black) !important;
+  --control-critical-primary-border-active: transparent !important;
+  --control-critical-primary-text-active: var(--pw-on-red) !important;
+  --control-critical-primary-icon-active: var(--pw-on-red) !important;
+  --control-critical-secondary-background-default: color-mix(in srgb, var(--pw-red) 16%, transparent) !important;
+  --control-critical-secondary-border-default: transparent !important;
+  --control-critical-secondary-text-default: var(--pw-red-text) !important;
+  --control-critical-secondary-icon-default: var(--pw-red-text) !important;
+  --control-critical-secondary-background-hover: color-mix(in srgb, var(--pw-red) 24%, transparent) !important;
+  --control-critical-secondary-border-hover: transparent !important;
+  --control-critical-secondary-text-hover: var(--pw-red-text) !important;
+  --control-critical-secondary-icon-hover: var(--pw-red-text) !important;
+  --control-critical-secondary-background-active: color-mix(in srgb, var(--pw-red) 32%, transparent) !important;
+  --control-critical-secondary-border-active: transparent !important;
+  --control-critical-secondary-text-active: var(--pw-red-text) !important;
+  --control-critical-secondary-icon-active: var(--pw-red-text) !important;
+  --control-connected-background-default: var(--pw-green) !important;
+  --control-connected-border-default: transparent !important;
+  --control-connected-text-default: var(--pw-on-green) !important;
+  --control-connected-icon-default: var(--pw-on-green) !important;
+  --control-connected-background-hover: color-mix(in oklab, var(--pw-green) 88%, white) !important;
+  --control-connected-border-hover: transparent !important;
+  --control-connected-text-hover: var(--pw-on-green) !important;
+  --control-connected-icon-hover: var(--pw-on-green) !important;
+  --control-connected-background-active: color-mix(in oklab, var(--pw-green) 85%, black) !important;
+  --control-connected-border-active: transparent !important;
+  --control-connected-text-active: var(--pw-on-green) !important;
+  --control-connected-icon-active: var(--pw-on-green) !important;
+  --control-expressive-background-default: var(--pw-purple) !important;
+  --control-expressive-border-default: transparent !important;
+  --control-expressive-text-default: var(--pw-on-purple) !important;
+  --control-expressive-icon-default: var(--pw-on-purple) !important;
+  --control-expressive-background-hover: color-mix(in oklab, var(--pw-purple) 88%, white) !important;
+  --control-expressive-border-hover: transparent !important;
+  --control-expressive-text-hover: var(--pw-on-purple) !important;
+  --control-expressive-icon-hover: var(--pw-on-purple) !important;
+  --control-expressive-background-active: color-mix(in oklab, var(--pw-purple) 85%, black) !important;
+  --control-expressive-border-active: transparent !important;
+  --control-expressive-text-active: var(--pw-on-purple) !important;
+  --control-expressive-icon-active: var(--pw-on-purple) !important;
+  --control-overlay-primary-background-default: color-mix(in srgb, var(--pw-deep) 78%, transparent) !important;
+  --control-overlay-primary-border-default: transparent !important;
+  --control-overlay-primary-text-default: var(--pw-fg) !important;
+  --control-overlay-primary-icon-default: var(--pw-fg) !important;
+  --control-overlay-primary-background-hover: color-mix(in srgb, var(--pw-deep) 88%, transparent) !important;
+  --control-overlay-primary-border-hover: transparent !important;
+  --control-overlay-primary-text-hover: var(--pw-fg) !important;
+  --control-overlay-primary-icon-hover: var(--pw-fg) !important;
+  --control-overlay-primary-background-active: color-mix(in srgb, var(--pw-deep) 94%, transparent) !important;
+  --control-overlay-primary-border-active: transparent !important;
+  --control-overlay-primary-text-active: var(--pw-fg) !important;
+  --control-overlay-primary-icon-active: var(--pw-fg) !important;
+  --control-overlay-secondary-background-default: color-mix(in srgb, var(--pw-fg) 14%, transparent) !important;
+  --control-overlay-secondary-border-default: transparent !important;
+  --control-overlay-secondary-text-default: var(--pw-fg) !important;
+  --control-overlay-secondary-icon-default: var(--pw-fg) !important;
+  --control-overlay-secondary-background-hover: color-mix(in srgb, var(--pw-fg) 22%, transparent) !important;
+  --control-overlay-secondary-border-hover: transparent !important;
+  --control-overlay-secondary-text-hover: var(--pw-fg) !important;
+  --control-overlay-secondary-icon-hover: var(--pw-fg) !important;
+  --control-overlay-secondary-background-active: color-mix(in srgb, var(--pw-fg) 30%, transparent) !important;
+  --control-overlay-secondary-border-active: transparent !important;
+  --control-overlay-secondary-text-active: var(--pw-fg) !important;
+  --control-overlay-secondary-icon-active: var(--pw-fg) !important;
+  --control-icon-only-background-hover: var(--pw-hover) !important;
+  --control-icon-only-border-hover: transparent !important;
+  --control-icon-only-background-active: var(--pw-press) !important;
+  --control-icon-only-border-active: transparent !important;
+  --control-icon-only-icon-default: var(--pw-muted) !important;
+  --control-icon-only-icon-hover: var(--pw-text) !important;
+  --control-icon-only-icon-active: var(--pw-fg) !important;
+  --control-brand-foreground: var(--pw-link) !important;
+  --control-brand-foreground-new: var(--pw-link) !important;
+  --redesign-button-tertiary-background: var(--pw-press) !important;
+  --redesign-button-tertiary-pressed-background: var(--pw-select) !important;
+  --redesign-button-tertiary-text: var(--pw-fg) !important;
+  --redesign-button-tertiary-pressed-text: var(--pw-fg) !important;
+
+  /* Status colours */
+  --text-feedback-critical: var(--pw-red-text) !important;
+  --border-feedback-critical: var(--pw-red) !important;
+  --background-feedback-critical: color-mix(in srgb, var(--pw-red) 14%, transparent) !important;
+  --text-feedback-positive: var(--pw-green-text) !important;
+  --border-feedback-positive: var(--pw-green) !important;
+  --background-feedback-positive: color-mix(in srgb, var(--pw-green) 14%, transparent) !important;
+  --text-feedback-warning: var(--pw-yellow-text) !important;
+  --border-feedback-warning: var(--pw-yellow) !important;
+  --background-feedback-warning: color-mix(in srgb, var(--pw-yellow) 14%, transparent) !important;
+  --text-feedback-info: var(--pw-link) !important;
+  --border-feedback-info: var(--pw-accent) !important;
+  --background-feedback-info: color-mix(in srgb, var(--pw-accent) 14%, transparent) !important;
+  --background-feedback-notification: var(--pw-red) !important;
+  --status-danger: var(--pw-red) !important;
+  --status-positive: var(--pw-green) !important;
+  --status-online: var(--pw-green) !important;
+  --status-idle: var(--pw-yellow) !important;
+  --status-dnd: var(--pw-red) !important;
+  --text-status-online: var(--pw-green-text) !important;
+  --text-status-idle: var(--pw-yellow-text) !important;
+  --text-status-dnd: var(--pw-red-text) !important;
+  --text-status-offline: var(--pw-subtle) !important;
+  --text-voice-connected: var(--pw-green-text) !important;
+  --text-voice-speaking: var(--pw-green-text) !important;
+  --text-voice-disconnected: var(--pw-red-text) !important;
+  --border-voice-muted: var(--pw-red) !important;
+
+  /* Code blocks */
+  --text-code: var(--pw-text) !important;
+  --text-code-comment: var(--pw-subtle) !important;
+  --text-code-keyword: var(--pw-purple-text) !important;
+  --text-code-string: var(--pw-green-text) !important;
+  --text-code-number: var(--pw-yellow-text) !important;
+  --text-code-builtin: var(--pw-cyan-text) !important;
+  --text-code-type: var(--pw-yellow-text) !important;
+  --text-code-title: var(--pw-link) !important;
+  --text-code-attribute: var(--pw-yellow-text) !important;
+  --text-code-tag: var(--pw-red-text) !important;
+  --text-code-property: var(--pw-cyan-text) !important;
+  --text-code-variable: var(--pw-red-text) !important;
+  --text-code-operator: var(--pw-cyan-text) !important;
+  --text-code-regexp: var(--pw-cyan-text) !important;
+  --text-code-escape: var(--pw-yellow-text) !important;
+  --text-code-bullet: var(--pw-red-text) !important;
+  --text-code-decorator: var(--pw-yellow-text) !important;
+  --text-code-namespace: var(--pw-cyan-text) !important;
+  --text-code-section: var(--pw-link) !important;
+  --text-code-link: var(--pw-link) !important;
+  --text-code-error: var(--pw-red-text) !important;
+  --text-code-addition: var(--pw-green-text) !important;
+  --text-code-deletion: var(--pw-red-text) !important;
+  --background-code-addition: color-mix(in srgb, var(--pw-green) 14%, transparent) !important;
+  --background-code-deletion: color-mix(in srgb, var(--pw-red) 14%, transparent) !important;
+
+  /* Old-style variables (r, g, b) read by the DiscordRecolor and BlurpleRecolor snippets and by themes copied from BetterDiscord */
+  --accentcolor: var(--pw-rgb-accent) !important;
+  --accentcolor2: var(--pw-rgb-accent) !important;
+  --linkcolor: var(--pw-rgb-link) !important;
+  --mentioncolor: var(--pw-rgb-accent) !important;
+  --successcolor: var(--pw-rgb-green) !important;
+  --warningcolor: var(--pw-rgb-yellow) !important;
+  --dangercolor: var(--pw-rgb-red) !important;
+  --textbrightest: var(--pw-rgb-fg) !important;
+  --textbrighter: var(--pw-rgb-text) !important;
+  --textbright: var(--pw-rgb-text) !important;
+  --textdark: var(--pw-rgb-muted) !important;
+  --textdarker: var(--pw-rgb-muted) !important;
+  --textdarkest: var(--pw-rgb-subtle) !important;
+  --backgroundaccent: var(--pw-rgb-highest) !important;
+  --backgroundprimary: var(--pw-rgb-chat) !important;
+  --backgroundsecondary: var(--pw-rgb-low) !important;
+  --backgroundsecondaryalt: var(--pw-rgb-low) !important;
+  --backgroundtertiary: var(--pw-rgb-lowest) !important;
+  --backgroundfloating: var(--pw-rgb-higher) !important;
+  --backgroundcode: var(--pw-rgb-lowest) !important;
+  --vspr-bg-base: var(--pw-rgb-bg) !important;
+  --vspr-bg-subtle: var(--pw-rgb-chat) !important;
+  --vspr-fg-base: var(--pw-rgb-fg) !important;
+  --vspr-fg-subtle: var(--pw-rgb-muted) !important;
+  --vspr-accent: var(--pw-rgb-accent) !important;
+  --vspr-fg-err: var(--pw-rgb-red) !important;
+  --vspr-fg-suc: var(--pw-rgb-green) !important;
+
+  /* Channel tabs */
+  --channeltabs-black: var(--pw-deep) !important;
+  --channeltabs-white: var(--pw-fg) !important;
+  --channeltabs-blue: var(--pw-accent) !important;
+  --channeltabs-green: var(--pw-green) !important;
+  --channeltabs-orange: var(--pw-yellow) !important;
+  --channeltabs-pink: var(--pw-purple) !important;
+  --channeltabs-red: var(--pw-red) !important;
+  --channeltabs-yellow: var(--pw-yellow) !important;
+}

@@ -1,0 +1,48 @@
+Route Intel VMX CPUID exits through the KVM fastpath.
+
+Intel VMX intercepts CPUID unconditionally, so every CPUID the guest issues
+costs a full VM-exit. The default handler goes through vmx_handle_exit() ->
+__vmx_handle_exit() -> kvm_vmx_exit_handlers[], which re-enables IRQs,
+re-checks pending events and reschedules — ~1-2 microseconds on this host.
+
+VMAware's VM::TIMER check (shown in output as "Checking timing anomalies")
+compares CPUID latency against LFENCE/SERIALIZE latency with a software
+counter thread; a VMEXIT cost ~10x higher than LFENCE trips the 2.75
+threshold and gets DETECTED.
+
+INVD, HLT, WRMSR, WRMSR_IMM and the VMX preemption timer already have
+fastpath entries in vmx_exit_handlers_fastpath(); they return directly to
+the guest without going through __vmx_handle_exit(), cutting a few
+hundred nanoseconds. CPUID is trivially pure (kvm_emulate_cpuid() only
+reads the precomputed CPUID entry table and advances RIP), so it is safe
+to route through the fastpath too.
+
+handle_fastpath_cpuid() is defined locally as a static helper to avoid
+touching arch/x86/kvm/x86.h — the symbol kvm_emulate_cpuid() is already
+declared in <asm/kvm_host.h> which vmx.c already includes.
+
+--- a/arch/x86/kvm/vmx/vmx.c
++++ b/arch/x86/kvm/vmx/vmx.c
+@@ -7282,6 +7282,13 @@ static void vmx_update_hv_timer(struct kvm_vcpu *vcpu, bool force_immediate_exit
+ 	barrier_nospec();
+ }
+
++static fastpath_t handle_fastpath_cpuid(struct kvm_vcpu *vcpu)
++{
++	if (!kvm_emulate_cpuid(vcpu))
++		return EXIT_FASTPATH_EXIT_USERSPACE;
++	return EXIT_FASTPATH_REENTER_GUEST;
++}
++
+ static fastpath_t vmx_exit_handlers_fastpath(struct kvm_vcpu *vcpu,
+ 					     bool force_immediate_exit)
+ {
+@@ -7305,6 +7312,8 @@ static fastpath_t vmx_exit_handlers_fastpath(struct kvm_vcpu *vcpu,
+ 		return handle_fastpath_hlt(vcpu);
+ 	case EXIT_REASON_INVD:
+ 		return handle_fastpath_invd(vcpu);
++	case EXIT_REASON_CPUID:
++		return handle_fastpath_cpuid(vcpu);
+ 	default:
+ 		return EXIT_FASTPATH_NONE;
+ 	}

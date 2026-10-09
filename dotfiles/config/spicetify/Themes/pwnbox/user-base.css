@@ -1,0 +1,534 @@
+
+
+:root {
+  --pwnbox-radius: 10px;
+}
+
+
+.VTO__modal-slot:empty,
+[class*="modal-slot"]:empty {
+  background: transparent !important;
+}
+
+
+:root,
+body {
+  --background-bright-accent: var(--spice-button) !important;
+  --background-bright-accent-hover: var(--spice-button) !important;
+
+  --text-base: var(--spice-text) !important;
+  --text-subdued: var(--spice-subtext) !important;
+  --text-bright-accent: var(--spice-button) !important;
+  --text-negative: var(--spice-notification-error) !important;
+  --text-warning: var(--spice-text) !important;
+  --text-positive: var(--spice-button) !important;
+
+  --essential-base: var(--spice-text) !important;
+  --essential-subdued: var(--spice-subtext) !important;
+  --essential-bright-accent: var(--spice-button) !important;
+
+  --decorative-base: var(--spice-text) !important;
+  --decorative-subdued: var(--spice-selected-row) !important;
+
+
+  --essential-positive: var(--spice-button) !important;
+  --background-positive: var(--spice-button) !important;
+  --text-positive: var(--spice-button) !important;
+  --decorative-positive: var(--spice-button) !important;
+  --essential-warning: var(--spice-button) !important;
+  --background-warning: var(--spice-button) !important;
+  --decorative-warning: var(--spice-button) !important;
+  --essential-negative: var(--spice-notification-error) !important;
+  --background-negative: var(--spice-notification-error) !important;
+  --decorative-negative: var(--spice-notification-error) !important;
+  --rdp-accent-color: var(--spice-button) !important;
+}
+
+
+[style*="--background-base"],
+[style*="--background-highlight"],
+[style*="--background-press"],
+[style*="--background-elevated"],
+[style*="--background-tinted"] {
+  --background-base: var(--spice-main) !important;
+  --background-base-low: var(--spice-main) !important;
+  --background-base-lowest: var(--spice-main) !important;
+  --background-base-min-contrast: var(--spice-main) !important;
+  --background-highlight: var(--spice-card) !important;
+  --background-press: var(--spice-card) !important;
+  --background-elevated-base: var(--spice-card) !important;
+  --background-elevated-highlight: var(--spice-card) !important;
+  --background-elevated-press: var(--spice-card) !important;
+  --background-tinted: var(--spice-main) !important;
+  --background-tinted-base: var(--spice-main) !important;
+  --background-tinted-highlight: var(--spice-card) !important;
+  --background-tinted-press: var(--spice-card) !important;
+}
+
+
+.Root__main-view,
+.Root__main-view .main-view-container {
+  --background-base: var(--spice-main) !important;
+  --background-base-low: var(--spice-main) !important;
+  --background-base-lowest: var(--spice-main) !important;
+  --background-tinted: var(--spice-main) !important;
+  --background-tinted-base: var(--spice-main) !important;
+  --background-noise: none !important;
+}
+
+
+.mOhp6uUOOQY4YFdW,
+[style*="--key-color"],
+[style*="--badge-color"] {
+  background-color: var(--spice-button) !important;
+  background-image: none !important;
+  color: var(--spice-main) !important;
+}
+
+
+.Root__main-view,
+.Root__nav-bar,
+.Root__right-sidebar,
+.Root__now-playing-bar {
+  border-radius: var(--pwnbox-radius);
+}
+
+
+* {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
+
+.os-scrollbar,
+.os-scrollbar-track,
+.os-scrollbar-handle,
+.os-scrollbar-cornerless {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
+}
+
+
+[style*="1ed760" i],
+[style*="1db954" i],
+[style*="30, 215, 96"],
+[style*="30,215,96"],
+[style*="29, 185, 84"],
+[style*="29,185,84"] {
+  background-color: var(--spice-button) !important;
+  background-image: none !important;
+  color: var(--spice-main) !important;
+}
+
+
+[data-testid="upgrade-button"],
+button[data-testid="upgrade-button"] {
+  display: none !important;
+}
+
+
+.Root__main-view,
+.under-main-view,
+[class*="underMainView"],
+[class*="UnderMainView"],
+.Root__main-view .main-view-container,
+.Root__main-view .main-view-container__scroll-node,
+[class*="scrollNode"],
+[class*="ScrollNode"] {
+  background-color: var(--spice-main) !important;
+  background-image: none !important;
+}
+
+
+.main-home-homeHeader,
+[class*="homeHeader"],
+[class*="HomeHeader"],
+[class*="homeContent"],
+[class*="HomeContent"] {
+  background-color: var(--spice-main) !important;
+  background-image: none !important;
+}
+
+
+.main-entityHeader-backgroundColor,
+.main-entityHeader-overlay,
+.main-entityHeader-background,
+.main-entityHeader-gradient,
+.main-actionBarBackground-background,
+[class*="entityHeader"],
+[class*="EntityHeader"],
+[class*="actionBarBackground"],
+[class*="ActionBarBackground"],
+[class*="trackListHeader"],
+[class*="TrackListHeader"] {
+  background-color: var(--spice-main) !important;
+  background-image: none !important;
+}
+
+
+[class*="entityHeader"],
+[class*="EntityHeader"],
+[class*="trackListHeader"],
+[class*="TrackListHeader"],
+[class*="actionBar"],
+[class*="ActionBar"] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+
+[class*="trackList"],
+[class*="TrackList"] {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+
+.Root__nav-bar,
+.Root__right-sidebar {
+  background-color: var(--spice-sidebar, var(--spice-main)) !important;
+}
+
+.Root__now-playing-bar {
+  background-color: var(--spice-player, var(--spice-main)) !important;
+}
+
+
+input,
+textarea,
+select,
+[contenteditable="true"],
+[role="textbox"],
+[role="combobox"],
+[role="searchbox"],
+[data-testid="search-input"],
+input[data-testid="search-input"] {
+  background-color: var(--spice-card, var(--spice-main)) !important;
+  background-image: none !important;
+  color: var(--spice-text) !important;
+  border: 1px solid var(--pwnbox-outline, var(--spice-button)) !important;
+  border-radius: var(--pwnbox-radius) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+input::placeholder,
+textarea::placeholder,
+[contenteditable="true"][data-placeholder]::before,
+[contenteditable="true"]:empty::before {
+  color: var(--spice-subtext) !important;
+  opacity: 1 !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus,
+[contenteditable="true"]:focus,
+[role="textbox"]:focus {
+  border-color: var(--spice-button) !important;
+  background-color: var(--spice-card, var(--spice-main)) !important;
+}
+
+
+[role="menu"],
+[role="listbox"],
+.main-contextMenu-menu,
+[class*="contextMenu"],
+[class*="ContextMenu"],
+[class*="popup"],
+[class*="Popup"],
+[class*="dialog"],
+[class*="Dialog"],
+[class*="modal"],
+[class*="Modal"],
+[class*="popover"],
+[class*="Popover"],
+[class*="tooltip"],
+[class*="Tooltip"] {
+  background-color: var(--spice-card, var(--spice-main)) !important;
+  color: var(--spice-text) !important;
+  border: 0 !important;
+  border-radius: var(--pwnbox-radius) !important;
+}
+
+[role="menuitem"],
+.main-contextMenu-menuItemButton,
+[class*="menuItem"],
+[class*="MenuItem"] {
+  color: var(--spice-text) !important;
+  border-radius: calc(var(--pwnbox-radius) - 2px) !important;
+}
+
+[role="menuitem"]:hover,
+[role="menuitem"]:focus,
+[role="option"]:hover,
+[role="option"][aria-selected="true"],
+.main-contextMenu-menuItemButton:hover,
+[class*="menuItem"]:hover,
+[class*="MenuItem"]:hover {
+  background-color: var(--spice-selected-row) !important;
+  color: var(--spice-text) !important;
+}
+
+
+button,
+[role="button"] {
+  background-image: none !important;
+  border-radius: var(--pwnbox-radius) !important;
+}
+
+::selection {
+  background: var(--spice-selected-row) !important;
+  color: var(--spice-text) !important;
+}
+
+
+/* ---- Outlines ----------------------------------------------------------------
+   The theme's outline colour (--pwnbox-outline, written by pwnbox-spotify from the
+   theme's border colour) goes on the edges of things, never on big fills: the four
+   panels, text fields, menus, dialogs and tooltips, and the primary button.
+   The surfaces themselves stay black and neutral grey (color.ini). */
+
+:root .Root__main-view,
+:root .Root__nav-bar,
+:root .Root__right-sidebar,
+:root .Root__now-playing-bar {
+  border: 1px solid var(--pwnbox-outline, var(--spice-button)) !important;
+  box-sizing: border-box !important;
+}
+
+:root [role="menu"],
+:root [role="listbox"],
+:root [role="dialog"],
+:root [role="tooltip"],
+:root .main-contextMenu-menu {
+  border: 1px solid var(--pwnbox-outline, var(--spice-button)) !important;
+}
+
+/* Text fields. (The more specific selectors keep these ahead of the older copy of
+   this stylesheet that Spotify may still carry, whichever loads last.) */
+:root input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),
+:root textarea,
+:root [role="searchbox"],
+:root [role="textbox"],
+:root [role="combobox"],
+:root [data-testid="search-input"] {
+  border: 1px solid var(--pwnbox-outline, var(--spice-button)) !important;
+}
+
+/* The boxes Spotify puts around a field (class names with "searchInput",
+   "textInput" ...) are not fields: they carry no border of their own, or a field
+   would show two or three nested outlines. */
+:root:not(#_) [class*="searchInput"]:not(input):not(.main-globalNav-searchInputSection),
+:root:not(#_) [class*="SearchInput"]:not(input),
+:root:not(#_) [class*="textInput"]:not(input),
+:root:not(#_) [class*="TextInput"]:not(input),
+:root:not(#_) [class*="inputInput"]:not(input),
+:root:not(#_) [class*="InputInput"]:not(input) {
+  background-color: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* The search box in the top bar (icon + field + browse button): ONE outline, on
+   the outer box; everything inside it is flat. */
+:root:not(#_) .main-globalNav-searchInputSection {
+  background-color: var(--spice-card, var(--spice-main)) !important;
+  border: 1px solid var(--pwnbox-outline, var(--spice-button)) !important;
+  border-radius: var(--pwnbox-radius) !important;
+  box-sizing: border-box !important;
+  box-shadow: none !important;
+}
+:root:not(#_) .main-globalNav-searchInputSection:focus-within {
+  border-color: var(--spice-text) !important;
+}
+:root:not(#_) .main-globalNav-searchInputSection :is(form, div, span, input, button):not([role="listbox"], [role="listbox"] *) {
+  background-color: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+/* The list that drops down from it (recent searches, suggestions) is inside the
+   same box in Spotify's markup: it keeps a solid dark background of its own. */
+:root:not(#_) .main-globalNav-searchInputSection [role="listbox"] {
+  background-color: var(--spice-card, var(--spice-main)) !important;
+  border: 1px solid var(--pwnbox-outline, var(--spice-button)) !important;
+  border-radius: var(--pwnbox-radius) !important;
+  box-sizing: border-box !important;
+}
+/* ... and the grey panel Spotify puts inside that list is flat, so the list's own
+   background and outline show. */
+:root:not(#_) .main-globalNav-searchInputSection [role="listbox"] > div {
+  background-color: transparent !important;
+  border-radius: var(--pwnbox-radius) !important;
+}
+
+/* Sliders and check boxes are inputs too, but they are not text fields. */
+:root input[type="range"],
+:root input[type="checkbox"],
+:root input[type="radio"] {
+  border: 0 !important;
+}
+
+/* The primary button (play, log in, save ...): an outline, not a filled block.
+   Spotify nests it three deep (a wrapper div, the button, an inner span) and fades
+   the inner span in on hover for the play buttons over cover art and in the Home
+   grid, so the outline lives on the span only: wrapper and button stay invisible,
+   and nothing shows until the glyph does. The span has a solid dark fill so the
+   glyph reads over a bright cover. */
+:root:not(#_) .main-playButton-PlayButton,
+:root:not(#_) [data-encore-id="buttonPrimary"],
+:root:not(#_) [data-testid="play-button"] {
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: var(--spice-text) !important;
+}
+
+:root:not(#_) [data-encore-id="buttonPrimary"] > span,
+:root:not(#_) [data-testid="play-button"] > span {
+  background-color: var(--spice-main) !important;
+  background-image: none !important;
+  border: 1px solid var(--pwnbox-outline, var(--spice-button)) !important;
+  border-radius: var(--pwnbox-radius) !important;
+  box-sizing: border-box !important;
+  color: var(--spice-text) !important;
+}
+
+:root:not(#_) [data-encore-id="buttonPrimary"]:hover > span,
+:root:not(#_) [data-testid="play-button"]:hover > span {
+  background-color: var(--spice-selected-row) !important;
+}
+
+:root:not(#_) [data-encore-id="buttonPrimary"] svg,
+:root:not(#_) [data-testid="play-button"] svg,
+:root:not(#_) .main-playButton-PlayButton svg {
+  fill: currentColor !important;
+}
+
+
+/* Filter chips on Home (All / Music / Podcasts ...): Spotify paints the chosen one
+   as a solid white pill. Here the chosen chip is outlined and the others are quiet. */
+:root:not(#_) [data-encore-id="chip"] > span {
+  background-color: var(--spice-card, var(--spice-main)) !important;
+  border: 1px solid var(--spice-selected-row) !important;
+  border-radius: var(--pwnbox-radius) !important;
+  box-sizing: border-box !important;
+  color: var(--spice-subtext) !important;
+}
+:root:not(#_) [data-encore-id="chip"]:hover > span {
+  border-color: var(--pwnbox-outline, var(--spice-button)) !important;
+  color: var(--spice-text) !important;
+}
+:root:not(#_) [data-encore-id="chip"][aria-checked="true"] > span {
+  background-color: transparent !important;
+  border-color: var(--pwnbox-outline, var(--spice-button)) !important;
+  color: var(--spice-text) !important;
+}
+
+
+/* The "now playing" bars (Home grid, track lists) are green images: draw them in
+   the outline colour. The image is moved out of its box (which clips) and its
+   drop shadow, which takes the colour, lands where the image was. */
+:root:not(#_) img[src*="equaliser"] {
+  transform: translateX(-60px) !important;
+  filter: drop-shadow(60px 0 0 var(--pwnbox-outline, var(--spice-button))) !important;
+}
+:root:not(#_) :has(> img[src*="equaliser"]) {
+  overflow: hidden !important;
+}
+
+/* The verified tick next to an artist's name is a pale green. */
+:root:not(#_) [class*="verified-badge"],
+:root:not(#_) [class*="verified-badge"] path {
+  fill: var(--pwnbox-outline, var(--spice-button)) !important;
+}
+
+
+/* A row of filter chips is a role="listbox" too (Liked Songs genres, Search
+   categories), and the rule for dropdown menus would draw a box around the whole
+   row. Only real popups get the menu look. */
+:root:not(#_) [role="listbox"]:has([data-encore-id="chip"]) {
+  background-color: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+
+/* Arrows that scroll a row of chips or cards: square like everything else, not a
+   grey circle. */
+:root:not(#_) [class*="carouselButton"] {
+  background-color: var(--spice-card, var(--spice-main)) !important;
+  border: 1px solid var(--pwnbox-outline, var(--spice-button)) !important;
+  border-radius: var(--pwnbox-radius) !important;
+  box-shadow: none !important;
+  box-sizing: border-box !important;
+}
+
+/* Toast messages ("Added to queue" ...) are a pale grey pill. */
+:root:not(#_) .notistack-Snackbar [data-encore-id="box"] {
+  background-color: var(--spice-card, var(--spice-main)) !important;
+  border: 1px solid var(--pwnbox-outline, var(--spice-button)) !important;
+  border-radius: var(--pwnbox-radius) !important;
+  box-shadow: none !important;
+  color: var(--spice-text) !important;
+}
+:root:not(#_) .notistack-Snackbar [data-encore-id="box"] * {
+  color: var(--spice-text) !important;
+}
+
+/* The box that holds a play button over cover art is round and has a soft shadow;
+   with a square outlined button inside, that shows as a dark circle behind it. */
+:root:not(#_) [class*="PlayButtonContainer"] {
+  border-radius: var(--pwnbox-radius) !important;
+  box-shadow: none !important;
+}
+
+
+/* Two things Spotify paints with fixed colours in its own stylesheet, so they are
+   matched by their (generated) class names. A Spotify update can rename them;
+   if one turns pale or blue again, find its new class name the same way
+   (inspect it in the debug window on port 9222). */
+/* The pale label pill with a small picture, e.g. "Artist pick": */
+:root:not(#_) .Jd9liNKX5WkQCz9T {
+  background: transparent !important;
+  border: 1px solid var(--pwnbox-outline, var(--spice-button)) !important;
+  border-radius: var(--pwnbox-radius) !important;
+  color: var(--spice-text) !important;
+}
+:root:not(#_) .Jd9liNKX5WkQCz9T * {
+  color: var(--spice-text) !important;
+}
+/* The blue "#8 in the world" circle on an artist page: */
+:root:not(#_) .UaFGUZb384McvxOx {
+  background: var(--spice-card, var(--spice-main)) !important;
+  border: 1px solid var(--pwnbox-outline, var(--spice-button)) !important;
+  border-radius: var(--pwnbox-radius) !important;
+  box-sizing: border-box !important;
+}
+
+
+/* Dropdowns in Settings (<select>): outlined like the other fields. */
+:root:not(#_) select {
+  border: 1px solid var(--pwnbox-outline, var(--spice-button)) !important;
+  border-radius: var(--pwnbox-radius) !important;
+}
+
+/* Secondary and tertiary buttons ("Import library", "Reset" ...): Spotify rounds
+   these into pills; they follow the theme's corner radius instead. */
+:root:not(#_) [data-encore-id="buttonSecondary"],
+:root:not(#_) [data-encore-id="buttonTertiary"],
+:root:not(#_) [data-encore-id="buttonSecondary"] > span,
+:root:not(#_) [data-encore-id="buttonTertiary"] > span {
+  border-radius: var(--pwnbox-radius) !important;
+}

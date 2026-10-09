@@ -1,0 +1,763 @@
+/*
+  IDA Pro theme that follows the desktop theme (ALT+S).
+
+  This file is the fixed look. pwnbox-theme puts a block of "@def pw_*" colour
+  definitions in front of it (from the current palette, see apply_ida) and
+  writes the result to ~/.idapro/themes/pwnbox/theme.css. Nothing below
+  contains a colour of its own, so a theme change only replaces that block.
+  IDA reads the file when it starts.
+
+  Layout: window chrome, then widgets, then the IDA-specific views
+  (disassembly, graph, navigation band, registers, cross references).
+*/
+
+@importtheme "_base";
+
+/* ---------------------------------------------------------------- palette
+   Qt's own styling paints backgrounds, selections and disabled states from
+   these, so most widgets need no rule of their own.                        */
+@palette Window              ${pw_chrome};
+@palette WindowText          ${pw_text};
+@palette Base                ${pw_bg};
+@palette AlternateBase       ${pw_chrome};
+@palette Text                ${pw_text};
+@palette Button              ${pw_chrome};
+@palette ButtonText          ${pw_text};
+@palette BrightText          ${pw_text};
+@palette ToolTipBase         ${pw_deep};
+@palette ToolTipText         ${pw_text};
+@palette PlaceholderText     ${pw_muted};
+@palette Link                ${pw_accent_text};
+@palette LinkVisited         ${pw_accent_text};
+
+@palette Disabled WindowText ${pw_disabled};
+@palette Disabled Text       ${pw_disabled};
+@palette Disabled ButtonText ${pw_disabled};
+
+@ifndef __MAC__
+@palette Highlight           ${pw_select};
+@palette HighlightedText     ${pw_select_text};
+@endif
+
+/* ------------------------------------------------------------ base chrome */
+QWidget
+{
+    background-color: ${pw_chrome};
+    color: ${pw_text};
+}
+
+QLabel
+{
+    background: transparent;
+}
+
+QToolTip,
+QTipLabel
+{
+    background: ${pw_deep};
+    color: ${pw_text};
+    border: 1px solid ${pw_accent};
+    border-radius: ${pw_radius};
+    margin: 0;
+    padding: 0;
+}
+
+/* ------------------------------------------------------------------ menus */
+QMenuBar,
+QMenuBar::item
+{
+    background-color: ${pw_chrome};
+    color: ${pw_text};
+}
+
+QMenuBar::item:selected
+{
+    background-color: ${pw_hover};
+}
+
+QMenu
+{
+    background-color: ${pw_chrome};
+    border: 1px solid ${pw_accent};
+    padding: 3px;
+}
+
+QMenu::item
+{
+    padding: 4px 22px 4px 12px;
+    border-radius: ${pw_radius};
+}
+
+QMenu::item:selected
+{
+    background-color: ${pw_select};
+    color: ${pw_select_text};
+}
+
+QMenu::item:disabled
+{
+    color: ${pw_disabled};
+    background: transparent;
+}
+
+QMenu::separator
+{
+    height: 1px;
+    background: ${pw_border};
+    margin: 4px 6px;
+}
+
+/* ---------------------------------------------------------------- docking */
+DockWidgetTitle,
+DockAreaDragTitle
+{
+    border: none;
+    background-color: ${pw_chrome_high};
+}
+
+DockWidgetTitle[active="true"]
+{
+    background-color: ${pw_hover};
+}
+
+DockWidget > QWidget > QAbstractButton
+{
+    background-color: ${pw_chrome_high};
+    border-radius: ${pw_radius};
+}
+
+QTabBar::tab
+{
+    background-color: ${pw_chrome};
+    color: ${pw_muted};
+    padding: 4px 12px;
+    border: none;
+    border-bottom: 2px solid transparent;
+}
+
+QTabBar::tab:hover
+{
+    background-color: ${pw_chrome_high};
+    color: ${pw_text};
+}
+
+QTabBar::tab:selected
+{
+    background-color: ${pw_bg};
+    color: ${pw_text};
+    border-bottom: 2px solid ${pw_accent};
+}
+
+QStatusBar::item
+{
+    border: none;
+}
+
+QStatusBar QLabel
+{
+    border: none;
+}
+
+QToolBar
+{
+    border: none;
+}
+
+/* ------------------------------------------------------------------ input */
+QLineEdit
+{
+    background-color: ${pw_bg};
+    border: 1px solid ${pw_accent};
+    min-height: 20px;
+    border-radius: ${pw_radius};
+    selection-background-color: ${pw_select};
+    selection-color: ${pw_select_text};
+}
+
+QLineEdit:hover
+{
+    border: 1px solid ${pw_accent};
+}
+
+QLineEdit:focus
+{
+    border: 1px solid ${pw_accent_hi};
+}
+
+QTextEdit,
+QPlainTextEdit
+{
+    background-color: ${pw_bg};
+    border: 1px solid ${pw_accent};
+    border-radius: ${pw_radius};
+    selection-background-color: ${pw_select};
+    selection-color: ${pw_select_text};
+}
+
+QPushButton
+{
+    background-color: ${pw_chrome};
+    border: 1px solid ${pw_accent};
+    text-align: center;
+    min-height: 20px;
+    min-width: 50px;
+    padding: 0 8px 0 8px;
+    border-radius: ${pw_radius};
+}
+
+QPushButton:disabled
+{
+    color: ${pw_disabled};
+    background-color: ${pw_chrome};
+    border: 1px solid ${pw_border};
+}
+
+quick_filter_widget_t > QPushButton
+{
+    min-width: 20px;
+}
+
+QPushButton:hover
+{
+    background-color: ${pw_hover};
+    border: 1px solid ${pw_accent_hi};
+}
+
+QPushButton:default
+{
+    border: 1px solid ${pw_accent_hi};
+}
+
+QPushButton:pressed
+{
+    background-color: ${pw_select};
+    border: 1px solid ${pw_accent_hi};
+}
+
+QComboBox
+{
+    border: 1px solid ${pw_accent};
+    border-radius: ${pw_radius};
+    color: ${pw_text};
+}
+
+QComboBox:!editable
+{
+    background-color: ${pw_chrome};
+}
+
+QComboBox > QLineEdit,
+QComboBox > QLineEdit:hover,
+QComboBox > QLineEdit:focus
+{
+    border: none;
+    min-height: default;
+}
+
+QComboBox:hover
+{
+    border: 1px solid ${pw_accent};
+}
+
+QComboBox:focus
+{
+    border: 1px solid ${pw_accent_hi};
+}
+
+QComboBox:disabled
+{
+    color: ${pw_disabled};
+}
+
+QComboBox::drop-down
+{
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 15px;
+    border-left-width: 1px;
+    border-left-color: ${pw_accent};
+    border-left-style: solid;
+}
+
+QComboBox::down-arrow
+{
+    image: url("$RELPATH/icons/expand.png");
+}
+
+QComboBox::down-arrow:disabled
+{
+    image: url("$RELPATH/icons/expand-disabled.png");
+}
+
+/* The drop-down list of a combo box. */
+QComboBox QAbstractItemView
+{
+    border: 1px solid ${pw_accent};
+    background-color: ${pw_chrome};
+}
+
+QWidget[field_validity=false]
+{
+    border-color: ${pw_red};
+    border-width: 1.2px;
+    border-style: inset;
+}
+
+QCheckBox::indicator,
+QRadioButton::indicator
+{
+    width: 12px;
+    height: 12px;
+    border: 1px solid ${pw_accent};
+    background-color: ${pw_bg};
+}
+
+QRadioButton::indicator
+{
+    border-radius: 7px;
+}
+
+QCheckBox::indicator:hover,
+QRadioButton::indicator:hover
+{
+    border: 1px solid ${pw_accent_hi};
+}
+
+QCheckBox::indicator:checked
+{
+    background-color: ${pw_accent};
+}
+
+QRadioButton::indicator:checked
+{
+    background-color: ${pw_accent};
+}
+
+QGroupBox
+{
+    margin-top: 5px;
+}
+
+QGroupBox::title
+{
+    subcontrol-origin: margin;
+    subcontrol-position: top center;
+}
+
+EditContainer,
+ChooserContainer,
+QGroupBox,
+QListView,
+QTreeView
+{
+    border: 1px solid ${pw_accent};
+    border-radius: ${pw_radius};
+}
+
+/* ----------------------------------------------------------- table / list */
+QTableView
+{
+    border: 1px solid ${pw_accent};
+    background-color: ${pw_bg};
+    gridline-color: ${pw_border_soft};
+}
+
+QHeaderView::section
+{
+    background-color: ${pw_chrome_high};
+    color: ${pw_muted};
+    border: none;
+    border-left: 1px solid ${pw_border_soft};
+    border-right: 1px solid ${pw_border_soft};
+    padding: 3px;
+}
+
+QHeaderView:horizontal::section
+{
+    min-height: 20px;
+}
+
+QTableCornerButton::section
+{
+    background: ${pw_chrome_high};
+    border: none;
+}
+
+@ifndef __MAC__
+QTreeView::item:selected,
+QListView::item:selected,
+QTableView::item:selected,
+QTreeView::branch:selected
+{
+    background-color: ${pw_select};
+    color: ${pw_select_text};
+}
+@endif
+
+/* --------------------------------------------------------------- scrollbar */
+QScrollBar
+{
+    background-color: ${pw_chrome};
+    width: 14px;
+    height: 14px;
+    margin: 0 0 0 0;
+}
+
+QScrollBar::sub-line,
+QScrollBar::add-line
+{
+    width: 0;
+    height: 0;
+}
+
+QScrollBar::add-page,
+QScrollBar::sub-page
+{
+    background: none;
+}
+
+QScrollBar::handle:vertical
+{
+    min-height: 24px;
+}
+
+QScrollBar::handle:horizontal
+{
+    min-width: 24px;
+}
+
+QScrollBar::handle
+{
+    background-color: ${pw_scroll};
+    margin: 3px;
+    border-radius: ${pw_handle_radius};
+}
+
+QScrollBar::handle:hover
+{
+    background-color: ${pw_scroll_hover};
+}
+
+/* ------------------------------------------------------- IDA widget chrome */
+log_widget_t
+{
+    color: ${pw_text};
+    background-color: ${pw_bg};
+}
+
+TNavBand > QPushButton,
+nav_scroll_button_t,
+RegJumpButton
+{
+    min-height: 0;
+    min-width: 0;
+    padding: 0;
+    border: none;
+}
+
+/* The IDC / Python switch under the output window. */
+CLIWidget > QGroupBox > QPushButton,
+CLIWidget > QGroupBox > QPushButton:hover,
+CLIWidget > QGroupBox > QPushButton:focus
+{
+    border: none;
+}
+
+CLIWidget > QGroupBox
+{
+    margin-top: 0;
+}
+
+chooser_widget_t,
+standalone_dirtree_widget_t
+{
+    qproperty-highlight-bg-default: ${pw_match_bg};
+    qproperty-highlight-bg-selected: ${pw_match_bg_selected};
+
+    qproperty-cut-text-color-default : ${pw_subtle};
+    qproperty-cut-text-color-selected : ${pw_muted};
+}
+
+text_area_t
+{
+    qproperty-keyword1-fg: ${pw_insn};
+    qproperty-keyword2-fg: ${pw_name_data};
+    qproperty-keyword3-fg: ${pw_red};
+    qproperty-string-fg: ${pw_str};
+    qproperty-comment-fg: ${pw_comment};
+    qproperty-preprocessor-fg: ${pw_insn};
+    qproperty-user1-fg: ${pw_reg};
+
+    qproperty-match-line-bg: ${pw_match_line};
+    qproperty-match-text-bg: ${pw_match_bg};
+}
+
+text_area_t QWidget
+{
+    background-color: transparent;
+}
+
+text_area_t text_area_margin_widget_t
+{
+    color: ${pw_muted};
+    qproperty-header-color: ${pw_text};
+}
+
+/* ------------------------------------------------------------ disassembly */
+CustomIDAMemo
+{
+    border: none;
+
+    qproperty-line-fg-default: ${pw_text};
+    qproperty-line-fg-regular-comment: ${pw_comment};
+    qproperty-line-fg-repeatable-comment: ${pw_comment_repeat};
+    qproperty-line-fg-automatic-comment: ${pw_comment_auto};
+    qproperty-line-fg-insn: ${pw_insn};
+    qproperty-line-fg-dummy-data-name: ${pw_name_data_dummy};
+    qproperty-line-fg-regular-data-name: ${pw_name_data};
+    qproperty-line-fg-demangled-name: ${pw_name_code};
+    qproperty-line-fg-punctuation: ${pw_punct};
+    qproperty-line-fg-charlit-in-insn: ${pw_str};
+    qproperty-line-fg-strlit-in-insn: ${pw_str};
+    qproperty-line-fg-numlit-in-insn: ${pw_num};
+    qproperty-line-fg-void-opnd: ${pw_red_bright};
+    qproperty-line-fg-code-xref: ${pw_xref_code};
+    qproperty-line-fg-data-xref: ${pw_xref_data};
+    qproperty-line-fg-code-xref-to-tail: ${pw_red_bright};
+    qproperty-line-fg-data-xref-to-tail: ${pw_yellow};
+    qproperty-line-fg-error: ${pw_red_bright};
+    qproperty-line-fg-line-prefix: ${pw_subtle};
+    qproperty-line-fg-opcode-byte: ${pw_opcode_byte};
+    qproperty-line-fg-extra-line: ${pw_comment};
+    qproperty-line-fg-alt-opnd: ${pw_yellow_bright};
+    qproperty-line-fg-hidden: ${pw_subtle};
+    qproperty-line-fg-libfunc: ${pw_libfunc};
+    qproperty-line-fg-locvar: ${pw_local};
+    qproperty-line-fg-dummy-code-name: ${pw_name_code_dummy};
+    qproperty-line-fg-asm-directive: ${pw_keyword};
+    qproperty-line-fg-macro: ${pw_red_bright};
+    qproperty-line-fg-strlit-in-data: ${pw_str};
+    qproperty-line-fg-charlit-in-data: ${pw_str};
+    qproperty-line-fg-numlit-in-data: ${pw_num};
+    qproperty-line-fg-keyword: ${pw_keyword};
+    qproperty-line-fg-register-name: ${pw_reg};
+    qproperty-line-fg-import-name: ${pw_import};
+    qproperty-line-fg-segment-name: ${pw_yellow_bright};
+    qproperty-line-fg-dummy-unknown-name: ${pw_muted};
+    qproperty-line-fg-code-name: ${pw_name_code};
+    qproperty-line-fg-unknown-name: ${pw_muted};
+    qproperty-line-fg-collapsed-line: ${pw_yellow_bright};
+    qproperty-line-fg-addr-expr: ${pw_muted};
+    qproperty-line-fg-patched-bytes: ${pw_red};
+    qproperty-line-fg-unsaved-changes: ${pw_yellow};
+
+    qproperty-line-bg-default: ${pw_bg};
+    qproperty-line-bg-selected: ${pw_line_selected};
+    qproperty-line-bg-highlight: ${pw_line_highlight};
+    qproperty-line-bg-bpt-enabled: ${pw_bpt_enabled};
+    qproperty-line-bg-bpt-disabled: ${pw_bpt_disabled};
+    qproperty-line-bg-bpt-unavailable: ${pw_bpt_unavailable};
+    qproperty-caret: ${pw_text};
+    qproperty-bookmark-star-outline: ${pw_text};
+
+    qproperty-line-pfx-libfunc: ${pw_libfunc};
+    qproperty-line-pfx-func: ${pw_pfx_func};
+    qproperty-line-pfx-insn: ${pw_pfx_insn};
+    qproperty-line-pfx-data: ${pw_pfx_data};
+    qproperty-line-pfx-unexplored: ${pw_pfx_data};
+    qproperty-line-pfx-extern: ${pw_pfx_extern};
+    qproperty-line-pfx-current-line: ${pw_accent_text};
+    qproperty-line-pfx-current-item: rgba(0, 0, 0, 0);
+    qproperty-line-pfx-lumina: ${pw_green_bright};
+
+    qproperty-graph-bg-top: ${pw_graph_bg};
+    qproperty-graph-bg-bottom: ${pw_graph_bg};
+    qproperty-graph-node-title-normal: ${pw_chrome_high};
+    qproperty-graph-node-title-selected: ${pw_title_selected};
+    qproperty-graph-node-title-current: ${pw_title_current};
+    qproperty-graph-node-frame-group: ${pw_yellow};
+    qproperty-graph-node-frame-selected: ${pw_accent_text};
+    qproperty-graph-node-shadow: ${pw_shadow};
+    qproperty-graph-node-high1: ${pw_node_green};
+    qproperty-graph-node-high2: ${pw_node_red};
+    qproperty-graph-node-foreign: ${pw_red};
+    qproperty-graph-edge-normal: ${pw_edge};
+    qproperty-graph-edge-yes: ${pw_green};
+    qproperty-graph-edge-no: ${pw_red};
+    qproperty-graph-edge-high: ${pw_yellow};
+    qproperty-graph-edge-selected: ${pw_accent_text};
+}
+
+CustomIDAMemo[debugging="true"]
+{
+    qproperty-line-bg-default: ${pw_bg_debug};
+}
+
+CustomIDAMemo[hints="true"]
+{
+    qproperty-line-bg-default: ${pw_chrome_high};
+    qproperty-hint-caption-bg: ${pw_hover};
+    qproperty-hint-caption-fg: ${pw_text};
+}
+
+syntax_color_t
+{
+    qproperty-function-name-color:        ${pw_name_code};
+    qproperty-library-function-color:     ${pw_libfunc};
+    qproperty-imported-function-color:    ${pw_import};
+    qproperty-data-name-color:            ${pw_name_data};
+    qproperty-regular-data-name-color:    ${pw_name_data};
+    qproperty-string-literal-color:       ${pw_str};
+    qproperty-data-string-color:          ${pw_str};
+    qproperty-numeric-constant-color:     ${pw_num};
+    qproperty-data-numeric-color:         ${pw_num};
+    qproperty-keyword-color:              ${pw_keyword};
+    qproperty-symbol-color:               ${pw_punct};
+    qproperty-register-color:             ${pw_reg};
+    qproperty-local-name-color:           ${pw_local};
+    qproperty-code-reference-color:       ${pw_xref_code};
+    qproperty-data-reference-color:       ${pw_xref_data};
+    qproperty-prefix-color:               ${pw_subtle};
+}
+
+/* ------------------------------------------------------------- CPU / jumps */
+TCpuRegs
+{
+    background-color: ${pw_bg_debug};
+    qproperty-register-defined: ${pw_text};
+    qproperty-register-changed: ${pw_yellow_bright};
+    qproperty-register-edited: ${pw_red_bright};
+    qproperty-register-unavailable: ${pw_subtle};
+}
+
+TCpuRegs ui_label_t
+{
+    color: ${pw_muted};
+}
+
+TextArrows
+{
+    qproperty-jump-in-function: ${pw_arrow};
+    qproperty-jump-external-to-function: ${pw_reg};
+    qproperty-jump-under-cursor: ${pw_yellow_bright};
+    qproperty-jump-target: ${pw_green};
+    qproperty-register-target: ${pw_red};
+}
+
+navband_t
+{
+    qproperty-lib-function: ${pw_libfunc};
+    qproperty-function: ${pw_nav_function};
+    qproperty-code: ${pw_nav_code};
+    qproperty-data: ${pw_nav_data};
+    qproperty-undefined: ${pw_nav_undefined};
+    qproperty-extern: ${pw_nav_extern};
+    qproperty-lumina-function: ${pw_green_bright};
+
+    qproperty-hl-lib-function: ${pw_libfunc_hl};
+    qproperty-hl-function: ${pw_nav_function_hl};
+    qproperty-hl-code: ${pw_red_hl};
+    qproperty-hl-data: ${pw_nav_data_hl};
+    qproperty-hl-undefined: ${pw_muted};
+    qproperty-hl-extern: ${pw_nav_extern_hl};
+    qproperty-hl-lumina-function: ${pw_green_hl};
+
+    qproperty-hl-outline: ${pw_accent_text};
+
+    qproperty-error: ${pw_red_bright};
+    qproperty-gap: ${pw_nav_gap};
+    qproperty-cursor: ${pw_accent_text};
+    qproperty-auto-analysis-cursor: ${pw_yellow_bright};
+}
+
+/* ------------------------------------------------- cross references, search */
+xref_tree_t
+{
+    qproperty-tree-background-color:      ${pw_bg};
+    qproperty-search-match-color:         ${pw_line_highlight};
+}
+
+xref_tree_t QTreeView::branch:has-children:!has-siblings:closed,
+xref_tree_t QTreeView::branch:closed:has-children:has-siblings {
+    border-image: none;
+    image: url(:/IDAG/resources/collapsible/closed_dark.svg);
+}
+
+xref_tree_t QTreeView::branch:open:has-children:!has-siblings,
+xref_tree_t QTreeView::branch:open:has-children:has-siblings {
+    border-image: none;
+    image: url(:/IDAG/resources/collapsible/open_dark.svg);
+}
+
+/* The collapsible section toggle, light chevrons on the dark surface. */
+buddy_label_t#collapse_toggle
+{
+    image: url(:/IDAG/resources/collapsible/closed_dark.svg);
+}
+buddy_label_t#collapse_toggle:hover
+{
+    image: url(:/IDAG/resources/collapsible/closed_dark_hover.svg);
+}
+buddy_label_t#collapse_toggle[collapsed="false"]
+{
+    image: url(:/IDAG/resources/collapsible/open_dark.svg);
+}
+buddy_label_t#collapse_toggle[collapsed="false"]:hover
+{
+    image: url(:/IDAG/resources/collapsible/open_dark_hover.svg);
+}
+
+/* Selection goes through selection-* rather than ::item:selected here, so the
+   match highlights these lists draw stay visible. */
+JumpAnywhereDialog QListView
+{
+    background-color: ${pw_bg};
+    selection-background-color: ${pw_select};
+    selection-color: ${pw_select_text};
+}
+
+pathfinder_list_t
+{
+    selection-background-color: ${pw_select};
+    selection-color: ${pw_select_text};
+}
+
+JumpAnywhereDialog QToolButton:checked
+{
+    background: ${pw_select};
+}
+
+StyledQListView
+{
+    qproperty-query-annotation-color: ${pw_muted};
+}
+
+xg_view_t
+{
+    qproperty-node-bg-import: ${pw_node_import};
+    qproperty-node-bg-code: ${pw_node_code};
+    qproperty-node-bg-data: ${pw_node_data};
+    qproperty-node-bg-default: ${pw_node_default};
+    qproperty-node-border: ${pw_text};
+    qproperty-node-text: ${pw_node_text};
+    qproperty-edge-default: ${pw_muted};
+    qproperty-edge-highlighted: ${pw_accent_text};
+    qproperty-viewer-bg: ${pw_bg};
+    qproperty-path-waypoint-border: ${pw_yellow_bright};
+    qproperty-path-spine-border: ${pw_reg};
+}
+
+xref_graph_widget_t QWidget
+{
+    background-color: ${pw_chrome};
+}
+
+/* In-app release notes. */
+RelNotesView
+{
+    qproperty-accent-color: ${pw_accent_text};
+    qproperty-code-color: ${pw_num};
+    qproperty-hint-color: ${pw_muted};
+    qproperty-highlight-color: ${pw_import};
+    qproperty-page-color: ${pw_bg};
+}

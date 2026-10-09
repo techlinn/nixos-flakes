@@ -1,0 +1,89 @@
+{
+  "useQuickCss": true,
+  "enableOnlineThemes": true,
+  "enabledThemes": [],
+  "themeLinks": [],
+  "plugins": {
+    "BadgeAPI": {
+      "enabled": true
+    },
+    "CallTimer": {
+      "enabled": true
+    },
+    "CommandsAPI": {
+      "enabled": true
+    },
+    "ConcatenatedComponentExtractor": {
+      "enabled": true
+    },
+    "ContextMenuAPI": {
+      "enabled": true
+    },
+    "CrashHandler": {
+      "enabled": true
+    },
+    "DisableDeepLinks": {
+      "enabled": true
+    },
+    "EquicordHelper": {
+      "enabled": true
+    },
+    "FixDiscordCss": {
+      "enabled": true
+    },
+    "FriendshipRanks": {
+      "enabled": true
+    },
+    "HeaderBarAPI": {
+      "enabled": true
+    },
+    "MemberListDecoratorsAPI": {
+      "enabled": true
+    },
+    "MessageAccessoriesAPI": {
+      "enabled": true
+    },
+    "MessageDecorationsAPI": {
+      "enabled": true
+    },
+    "MutualGroupDMs": {
+      "enabled": true
+    },
+    "NewPluginsManager": {
+      "enabled": true
+    },
+    "NicknameIconsAPI": {
+      "enabled": true
+    },
+    "NoTrack": {
+      "enabled": true
+    },
+    "NoticesAPI": {
+      "enabled": true
+    },
+    "PlatformIndicators": {
+      "enabled": true
+    },
+    "PlatformSpoofer": {
+      "enabled": true
+    },
+    "Settings": {
+      "enabled": true
+    },
+    "SupportHelper": {
+      "enabled": true
+    },
+    "UserSettingsAPI": {
+      "enabled": true
+    },
+    "WebContextMenus": {
+      "enabled": true
+    },
+    "WebKeybinds": {
+      "enabled": true
+    },
+    "WebScreenShareFixes": {
+      "enabled": true
+    }
+  }
+}

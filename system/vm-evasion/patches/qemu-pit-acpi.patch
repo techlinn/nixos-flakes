@@ -1,0 +1,69 @@
+Add Intel 8254 PIT (PNP0100) ACPI device to the DSDT.
+
+QEMU emulates the 8254 PIT at the usual legacy I/O ports (0x40..0x43) but
+never surfaces it via ACPI, because Linux discovers legacy ISA timers from
+fixed ports without needing the PnP ID. Bare-metal firmware does advertise
+it, so a Windows guest sees no PNP0100 device and anti-VM tooling that
+enumerates present PnP devices (e.g. VMAware's VM::CLOCK check, labelled
+"Checking system timers...") flips on the absence.
+
+Patch applies to QEMU 10.1.0, hw/i386/acpi-build.c. It adds a
+build_pit_aml() helper modelled on build_hpet_aml() and calls it
+unconditionally from build_dsdt() after the HPET block. The device is
+exposed in the _SB scope with _HID=EisaId("PNP0100"), _UID=0,
+_STA=0x0F, and _CRS={IO(0x40..0x43, len 4), IRQ(0)}.
+
+The custom QEMU this host uses is built out of tree at
+/home/techh/VMs/build/qemu-10.1.0/ and the resulting binary is copied to
+/home/techh/VMs/custom-qemu/bin/qemu-system-x86_64, which the libvirt
+domain XML points at via <emulator>. So this patch is kept here for
+documentation and re-apply, not as a nixpkgs overlay.
+
+To re-apply after a fresh QEMU 10.1.0 extract:
+    cd /home/techh/VMs/build/qemu-10.1.0
+    patch -p1 < /home/techh/Flakes/hosts/tower/qemu-pit-acpi.patch
+    nix-shell -p ninja meson pkg-config gcc glib pixman zlib python3 \
+              snappy lzo dtc numactl vde2 libaio bzip2 libseccomp \
+              liburing capstone \
+              --run "ninja -C build qemu-system-x86_64"
+    cp build/qemu-system-x86_64 /home/techh/VMs/custom-qemu/bin/
+
+--- a/hw/i386/acpi-build.c
++++ b/hw/i386/acpi-build.c
+@@ -433,6 +433,25 @@ static void build_hpet_aml(Aml *table)
+     aml_append(table, scope);
+ }
+
++static void build_pit_aml(Aml *table)
++{
++    Aml *crs;
++    Aml *scope = aml_scope("_SB");
++    Aml *dev = aml_device("PIT");
++
++    aml_append(dev, aml_name_decl("_HID", aml_eisaid("PNP0100")));
++    aml_append(dev, aml_name_decl("_UID", aml_int(0)));
++    aml_append(dev, aml_name_decl("_STA", aml_int(0x0F)));
++
++    crs = aml_resource_template();
++    aml_append(crs, aml_io(AML_DECODE16, 0x0040, 0x0040, 0x01, 0x04));
++    aml_append(crs, aml_irq_no_flags(0));
++    aml_append(dev, aml_name_decl("_CRS", crs));
++
++    aml_append(scope, dev);
++    aml_append(table, scope);
++}
++
+ static Aml *build_vmbus_device_aml(VMBusBridge *vmbus_bridge)
+ {
+     Aml *dev;
+@@ -1086,6 +1105,8 @@ build_dsdt(GArray *table_data, BIOSLinker *linker,
+     if (misc->has_hpet) {
+         build_hpet_aml(dsdt);
+     }
+
++    build_pit_aml(dsdt);
++
+     if (vmbus_bridge) {
+         sb_scope = aml_scope("_SB");
+         aml_append(sb_scope, build_vmbus_device_aml(vmbus_bridge));
+</content>

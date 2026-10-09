@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Start EasyEffects in the background and make sure the microphone gate is on.
+#
+# EasyEffects should remember its effects, but version 8 has been seen to lose
+# its saved settings. So after it starts, this looks at which input preset it
+# last loaded and loads "Mic-Gate" only if that is a different one, which makes
+# running this twice harmless.
+#
+# It does not talk to EasyEffects until its audio devices exist: a command sent
+# to it before then would start a second copy with a window.
+set -u
+
+preset="Mic-Gate"
+command -v easyeffects >/dev/null 2>&1 || exit 0
+
+setsid easyeffects --service-mode --hide-window >/dev/null 2>&1 &
+
+ready=""
+for _ in $(seq 1 40); do
+    if pw-cli ls Node 2>/dev/null | grep -q 'easyeffects_source'; then
+        ready=1
+        break
+    fi
+    sleep 1
+done
+[ -n "$ready" ] || exit 1
+sleep 2
+
+current="$(easyeffects --last-loaded-preset input 2>/dev/null | sed -n 's/^input: *//p' | head -1)"
+if [ "$current" != "$preset" ]; then
+    easyeffects --load-preset "$preset" >/dev/null 2>&1 || true
+fi

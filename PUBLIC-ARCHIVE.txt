@@ -1,0 +1,12 @@
+pwnbox flake
+
+This archive is the pwnbox NixOS + home-manager flake as published on https://pwnbox.one.
+
+Removed from the public archive:
+- dotfiles/gnome/fonts/Berkeley Mono *  (commercial font, licensed per user; buy it at berkeleygraphics.com and drop the files back into dotfiles/gnome/fonts/)
+- the lite archive also leaves out the wallpaper library in dotfiles/gnome/wallpapers/ (add your own images there; the custom themes keep their wallpapers)
+
+Install on an existing NixOS machine:
+    ./install.sh switch
+
+Manual: https://pwnbox.one/docs/

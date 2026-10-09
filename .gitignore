@@ -1,0 +1,7 @@
+result
+result-*
+.direnv
+*.swp
+
+# Paid font (licensed per user): never publish.
+dotfiles/gnome/fonts/Berkeley Mono*

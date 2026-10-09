@@ -1,0 +1,72 @@
+// Acanthus: Telegram colours.
+//
+// The base Telegram theme is black and white: its "accent" is plain white and
+// its links are blue. pwnbox-theme recolours it from the palette, which keeps
+// it black and off-white. These lines give it the theme's red where Telegram
+// shows an accent (the same dark red as in Discord), and its rose for links
+// and other small highlights. Each line replaces that key in the generated
+// theme (see sync_telegram in pwnbox-theme).
+
+// accent: only the small marks are filled (badges, file and play circles,
+// ticks). Big areas (selected rows, buttons, bubbles) stay black and neutral.
+windowBgActive: #1c1c1c;
+windowFgActive: #e3d3d0;
+activeButtonBg: #1c1c1c;
+activeButtonBgOver: #262222;
+activeButtonBgRipple: #2e2828;
+activeButtonFg: #cb9090;
+activeButtonSecondaryFg: #cb9090;
+dialogsUnreadBg: #944444;
+dialogsUnreadFg: #f3e9e7;
+sideBarBadgeBg: #944444;
+msgFileInBg: #944444;
+msgFileInBgOver: #a55050;
+msgFileInBgSelected: #a55050;
+msgFileOutBg: #944444;
+msgFileOutBgOver: #a55050;
+msgFileOutBgSelected: #a55050;
+historyFileInIconFg: #f3e9e7;
+historyFileOutIconFg: #f3e9e7;
+overviewCheckBgActive: #944444;
+overviewCheckFgActive: #f3e9e7;
+profileVerifiedCheckBg: #944444;
+profileVerifiedCheckFg: #f3e9e7;
+dialogsVerifiedIconBg: #b57c7c;
+dialogsVerifiedIconFg: #000000;
+youtubePlayIconBg: #944444;
+videoPlayIconBg: #944444;
+
+// accent text, lines and small marks
+windowActiveTextFg: #cb9090;
+activeLineFg: #b57c7c;
+lightButtonFg: #cb9090;
+lightButtonFgOver: #dba6a6;
+historyLinkInFg: #cb9090;
+historyLinkOutFg: #cb9090;
+mediaviewTextLinkFg: #cb9090;
+importantTooltipFgLink: #cb9090;
+historyUnreadBarFg: #cb9090;
+msgInServiceFg: #cb9090;
+msgInServiceFgSelected: #e3bcbc;
+msgOutServiceFg: #cb9090;
+msgOutServiceFgSelected: #e3bcbc;
+msgOutReplyBarColor: #b57c7c;
+msgOutReplyBarSelColor: #cb9090;
+contactsStatusFgOnline: #cb9090;
+emojiIconFgActive: #cb9090;
+sideBarTextFgActive: #cb9090;
+sideBarIconFgActive: #cb9090;
+historySendIconFg: #b57c7c;
+historySendIconFgOver: #cb9090;
+sliderBgActive: #b57c7c;
+mediaPlayerActiveFg: #b57c7c;
+mediaviewPlaybackActive: #b57c7c;
+mediaviewPlaybackActiveOver: #cb9090;
+msgWaveformInActive: #b57c7c;
+msgWaveformOutActive: #b57c7c;
+historyVideoMessageProgressFg: #cb9090;
+boxTextFgGood: #9fa26c;
+
+// the open chat in the list and your own messages: neutral greys
+dialogsBgActive: #1c1c1c;
+msgOutBg: #181616;
