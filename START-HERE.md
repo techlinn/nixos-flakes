@@ -63,7 +63,7 @@ Hyprland basics (these use ALT, not the Windows key):
 
 ## Later
 
-- Your config lives in `~/Flakes`. Machine settings are in `~/Flakes/hosts/tower/default.nix`.
+- Your config lives in `~/Flakes`. Machine settings are in `~/Flakes/hosts/nix/default.nix`.
 - After editing it, apply changes with: `upd`
 - The full pentest toolset is included. To remove it, set `hacking = false;` in that file and run `upd`.
 - `update` upgrades everything.

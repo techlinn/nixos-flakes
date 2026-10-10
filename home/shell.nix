@@ -66,6 +66,11 @@ in
       export PATH="$PATH:$HOME/.pdtm/go/bin"
       export PATH="$PATH:$HOME/.kubescape/bin"
 
+      # `npm install -g` cannot write into the read-only Nix store, so global
+      # npm packages go to a folder in the home directory.
+      export NPM_CONFIG_PREFIX="$HOME/.npm-global"
+      export PATH="$HOME/.npm-global/bin:$PATH"
+
       export PNPM_HOME="$HOME/.local/share/pnpm"
       export BUN_INSTALL="$HOME/.bun"
       case ":$PATH:" in
@@ -146,9 +151,11 @@ in
     EDITOR = "micro";
     VISUAL = "micro";
     MICRO_TRUECOLOR = "1";
+    NPM_CONFIG_PREFIX = "$HOME/.npm-global";
   };
 
   home.sessionPath = [
+    "$HOME/.npm-global/bin"
     "$HOME/.local/share/pnpm"
     "$HOME/.bun/bin"
     "$HOME/go/bin"

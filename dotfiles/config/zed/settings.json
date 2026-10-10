@@ -1,7 +1,7 @@
 {
   "cli_default_open_behavior": "new_window",
-  "buffer_font_family": "Berkeley Mono",
-  "ui_font_family": "Manrope",
+  "buffer_font_family": "JetBrains Mono",
+  "ui_font_family": "Berkeley Mono",
   "agent_buffer_font_size": 10.5,
   "git_panel": {
     "tree_view": true,

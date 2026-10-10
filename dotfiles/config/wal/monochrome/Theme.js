@@ -17,9 +17,9 @@ var yellow     = "#999999";
 var mauve      = "#717171";
 var cyan       = "#8a8a8a";
 
-var fontFamily = "Manrope";
+var fontFamily = "Berkeley Mono";
 var fontIcons  = "JetBrainsMono Nerd Font Mono";
-var fontMono   = "JetBrainsMono Nerd Font Mono";
+var fontMono   = "Berkeley Mono";
 var fontSize   = 11;
 var barHeight   = 30;
 var radius      = 9;

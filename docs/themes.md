@@ -108,7 +108,7 @@ buttons and the editor's keywords.
 | Smoke Grain | `smoke-grain.jpg` | Black with a cool blue-grey cast from the picture |
 | Dark Room | `wallhaven-j3gvxy.jpg` | Warm-tinged black, soft cream-white accent |
 | Voxel Dusk | `wallhaven-zye5wv.png` | Warm black, muted clay-peach accent, olive green |
-| Acanthus | `acanthus.png` | Pure black, dusty-rose accent and window border, olive and teal; comes with its own look (below) |
+| Acanthus | `acanthus.png` | Pure black with greys and whites, dusty-rose accent and window border, red and pink in code; comes with its own look (below) |
 
 Notes on how some were made:
 
@@ -157,9 +157,11 @@ Notes on how some were made:
   A theme's `nvim.lua` gives it real colours for code, the file tree, the tabs,
   the status line, popups and the file finder; Neovim reloads them within a
   couple of seconds when the theme changes, and goes back to grey on a theme
-  without one. Acanthus uses it for the reference's scheme: mauve italic
-  keywords, rose bold functions, olive types, teal members, rose-beige tree,
-  olive mode chip.
+  without one. Acanthus uses it for greys and whites with only the
+  theme's red and rose as accents: red italic keywords, rose functions, pink
+  strings, light grey types, bright red numbers, rose-beige tree, light grey
+  mode chip. The same palette is in its `zed.json`, and the terminal's own
+  colours (`theme.conf`) have no green, teal or purple either.
 
   When a rebuild brings a changed version of the theme you are using (any of
   these files), it is applied again by itself; you do not have to pick the

@@ -1,34 +1,37 @@
 -- Acanthus: Neovim colours.
 --
--- The reference editor's scheme, sampled colour by colour from the picture it
--- was modelled on. It is laid over the grey scheme in config/theme.lua (see
--- override_path there), so anything not named here stays as it is.
-local rose = "#ab7575"        -- functions, the tree root, the main accent
+-- Greys and whites with the theme's red and rose as the only accents: red
+-- keywords, rose functions, pink strings, light grey types, bright red numbers.
+-- It is laid over the grey scheme in config/theme.lua (see override_path there),
+-- so anything not named here stays as it is.
+local rose = "#ab7575"        -- the tree root, titles, the main UI accent
 local rose_hi = "#cb9090"     -- cursor, matches, brighter marks
 local rose_text = "#a27d76"   -- the current line number, tree names
 local rose_dim = "#94736e"    -- tree file names
-local pink = "#c57e7e"        -- operators
-local punct = "#bf7a7a"       -- ; , ? :
-local mauve = "#b88eb8"       -- keywords
-local olive = "#7e8157"       -- types
-local olive_hi = "#858953"    -- constants, numbers, macros
-local teal = "#4e7575"        -- members and parameters
-local teal_hi = "#6ca4a2"     -- strings, links
-local grey = "#9a9a9a"        -- variables
-local grey_mid = "#8b8b8b"    -- builtin types, plain text in panels
+local fn = "#cb9090"          -- functions
+local pink = "#8a8283"        -- operators
+local punct = "#6e6668"       -- ; , ? :
+local mauve = "#c9605f"       -- keywords
+local olive = "#cfc5c3"       -- types
+local olive_hi = "#cb9090"    -- constants, macros, attributes
+local num = "#dd7473"         -- numbers and booleans
+local teal = "#9a9292"        -- members and parameters
+local teal_hi = "#e0a8aa"     -- strings, links
+local grey = "#a8a0a0"        -- variables
+local grey_mid = "#8b8b8b"    -- plain text in panels
 local brace = "#686868"       -- brackets
-local comment = "#655e60"     -- comments, line numbers, separators
+local comment = "#5a5456"     -- comments, line numbers, separators
 local line = "#2a2627"        -- indent guides
 local cursorline = "#1c1c1c"
 local card = "#0f0d0d"
 local red = "#c9605f"
-local sand = "#c2a66a"
+local sand = "#d4917f"
 
 return {
   lualine = {
     normal = olive,
     insert = rose,
-    visual = mauve,
+    visual = rose_hi,
     replace = red,
     command = sand,
     terminal = teal_hi,
@@ -45,11 +48,11 @@ return {
     Constant = { fg = olive_hi },
     String = { fg = teal_hi },
     Character = { fg = teal_hi },
-    Number = { fg = olive_hi },
-    Float = { fg = olive_hi },
-    Boolean = { fg = olive_hi },
+    Number = { fg = num },
+    Float = { fg = num },
+    Boolean = { fg = num },
     Identifier = { fg = grey },
-    Function = { fg = rose, bold = true },
+    Function = { fg = fn },
     Statement = { fg = mauve },
     Conditional = { fg = mauve },
     Repeat = { fg = mauve },
@@ -85,24 +88,24 @@ return {
     ["@keyword.import"] = { fg = mauve },
     ["@type.qualifier"] = { fg = mauve, italic = true },
     ["@storageclass"] = { fg = mauve, italic = true },
-    ["@function"] = { fg = rose, bold = true },
-    ["@function.call"] = { fg = rose, bold = true },
-    ["@function.method"] = { fg = rose, bold = true },
-    ["@function.method.call"] = { fg = rose, bold = true },
-    ["@method"] = { fg = rose, bold = true },
-    ["@method.call"] = { fg = rose, bold = true },
-    ["@function.builtin"] = { fg = rose, bold = true },
+    ["@function"] = { fg = fn },
+    ["@function.call"] = { fg = fn },
+    ["@function.method"] = { fg = fn },
+    ["@function.method.call"] = { fg = fn },
+    ["@method"] = { fg = fn },
+    ["@method.call"] = { fg = fn },
+    ["@function.builtin"] = { fg = fn },
     ["@function.macro"] = { fg = olive_hi },
     ["@constructor"] = { fg = olive },
     ["@type"] = { fg = olive },
-    ["@type.builtin"] = { fg = grey_mid },
+    ["@type.builtin"] = { fg = olive },
     ["@type.definition"] = { fg = olive },
     ["@constant"] = { fg = olive_hi },
     ["@constant.builtin"] = { fg = olive_hi },
     ["@constant.macro"] = { fg = olive_hi },
-    ["@number"] = { fg = olive_hi },
-    ["@number.float"] = { fg = olive_hi },
-    ["@boolean"] = { fg = olive_hi },
+    ["@number"] = { fg = num },
+    ["@number.float"] = { fg = num },
+    ["@boolean"] = { fg = num },
     ["@string"] = { fg = teal_hi },
     ["@string.escape"] = { fg = mauve },
     ["@string.regex"] = { fg = mauve },
@@ -206,10 +209,10 @@ return {
     DiagnosticFloatingInfo = { fg = teal_hi },
     DiagnosticFloatingHint = { fg = comment },
 
-    DiffAdd = { bg = "#14160d" },
-    DiffChange = { bg = "#1a1710" },
+    DiffAdd = { bg = "#141414" },
+    DiffChange = { bg = "#1a1616" },
     DiffDelete = { fg = red, bg = "#1c0e0e" },
-    DiffText = { bg = "#33301a", bold = true },
+    DiffText = { bg = "#2b2626", bold = true },
     Added = { fg = olive },
     Changed = { fg = sand },
     Removed = { fg = red },
@@ -288,8 +291,8 @@ return {
     CmpItemMenu = { fg = comment, italic = true },
     CmpItemKind = { fg = teal_hi },
     CmpItemKindText = { fg = grey_mid },
-    CmpItemKindFunction = { fg = rose },
-    CmpItemKindMethod = { fg = rose },
+    CmpItemKindFunction = { fg = fn },
+    CmpItemKindMethod = { fg = fn },
     CmpItemKindVariable = { fg = grey },
     CmpItemKindKeyword = { fg = mauve },
     CmpItemKindSnippet = { fg = olive_hi },

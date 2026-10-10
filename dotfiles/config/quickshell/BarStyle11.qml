@@ -32,11 +32,9 @@ Item {
     // The highlight: the focused-window border colour, so bar and windows match.
     readonly property color accent: (typeof Theme.focus === "string" && Theme.focus.length > 0)
         ? Theme.focus : Theme.red
-    // The clock is set in the application (monospace) font. If that font is not
-    // installed, the icon font is used, which is monospace and always present;
-    // otherwise the digits would fall back to the proportional interface font.
-    readonly property string monoFont: Qt.fontFamilies().indexOf(Theme.fontMono) >= 0
-        ? Theme.fontMono : Theme.fontIcons
+    // The clock is set in the system font, like the rest of the bar (not the
+    // application font, which is for code).
+    readonly property string monoFont: Theme.fontFamily
     readonly property int pillHeight: 26
     readonly property int pillTop: 5
     readonly property int edge: 6

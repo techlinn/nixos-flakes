@@ -9,7 +9,7 @@
 ├── flake.nix                 inputs and outputs
 ├── install.sh                bootstrap / rebuild helper
 ├── hosts/                    per-machine configs (one dir per host)
-│   ├── tower/                this machine
+│   ├── nix/                this machine
 │   └── nixos/                template host
 ├── system/                   system-wide NixOS config
 │   ├── options.nix           pwnbox.* option tree

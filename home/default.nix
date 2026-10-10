@@ -7,5 +7,6 @@
     ./packages.nix # user-only extras
     ./gtk.nix      # GTK theme (icons, cursor, dark mode)
     ./neovim.nix   # neovim plugins + config
+    ./claude-sync.nix # Claude Code skills, MCP servers, npm programs from ~/Flakes/claude
   ];
 }

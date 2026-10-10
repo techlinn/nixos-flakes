@@ -1,0 +1,16 @@
+{
+  "ida-pro-mcp": {
+    "type": "stdio",
+    "command": "${HOME}/.local/bin/ida-pro-mcp",
+    "args": [],
+    "env": {}
+  },
+  "graft": {
+    "type": "stdio",
+    "command": "${HOME}/.npm-global/bin/graft",
+    "args": [
+      "mcp"
+    ],
+    "env": {}
+  }
+}

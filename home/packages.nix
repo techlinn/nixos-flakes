@@ -12,6 +12,7 @@
     pkgs.pwnbox.tg-config
 
     opencode
+    claude-code
 
     (writeShellScriptBin "zed" ''exec ${zed-editor}/bin/zeditor "$@"'')
   ];

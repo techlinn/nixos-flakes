@@ -1,4 +1,4 @@
-# System fonts: Manrope UI, Berkeley Mono code, plus common fallbacks.
+# System fonts: Manrope for everyday apps, Berkeley Mono for the bar and the desktop, JetBrains Mono for code tools, plus common fallbacks.
 {
   config,
   lib,
@@ -41,7 +41,7 @@ lib.mkIf config.pwnbox.desktop.enable {
       enable = true;
       defaultFonts = {
         monospace = [
-          "Berkeley Mono"
+          "JetBrains Mono"
           "Iosevka Nerd Font Mono"
           "JetBrainsMono Nerd Font Mono"
           "Noto Sans Mono"
@@ -50,7 +50,10 @@ lib.mkIf config.pwnbox.desktop.enable {
           "Manrope"
           "Noto Sans"
         ];
-        serif = [ "Noto Serif" ];
+        serif = [
+          "Manrope"
+          "Noto Serif"
+        ];
         emoji = [ "Noto Color Emoji" ];
       };
     };

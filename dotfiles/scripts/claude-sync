@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+# Keeps Claude Code's MCP servers and your own skills in step with the flake
+# folder (~/Flakes/claude). See ~/Flakes/claude/README.md.
+#
+#   claude-sync auto           what the login service runs: like apply, but quiet, and
+#                              it skips what is not possible yet (no Claude, no network)
+#   claude-sync apply          flake folder -> Claude Code (programs, servers, skills)
+#   claude-sync tools          only the npm programs in claude/npm-tools.txt
+#   claude-sync skills         only the skills
+#   claude-sync mcp [name...]  only the MCP servers (all, or the ones named)
+#   claude-sync save           Claude Code -> flake folder (MCP servers only)
+set -euo pipefail
+
+for d in "$HOME/.local/bin" "$HOME/.nix-profile/bin" /etc/profiles/per-user/"$(id -un)"/bin /run/current-system/sw/bin; do
+    case ":$PATH:" in *":$d:"*) ;; *) PATH="$PATH:$d" ;; esac
+done
+
+dir="${CLAUDE_SYNC_DIR:-$HOME/Flakes/claude}"
+servers="$dir/mcp-servers.json"
+claude_json="$HOME/.claude.json"
+
+need() { command -v "$1" >/dev/null 2>&1 || { echo "claude-sync: '$1' is missing" >&2; exit 1; }; }
+
+apply_mcp() {
+    need jq
+    need claude
+    [ -f "$servers" ] || { echo "claude-sync: $servers not found" >&2; exit 1; }
+    local name json
+    while IFS= read -r name; do
+        # With names on the command line, only those servers are touched.
+        if [ "$#" -gt 0 ]; then
+            case " $* " in *" $name "*) ;; *) continue ;; esac
+        fi
+        # ${HOME} is written out; any other ${NAME} stays for Claude Code to fill in.
+        json="$(jq -c --arg n "$name" '.[$n]' "$servers" | sed "s|\${HOME}|$HOME|g")"
+        # Already there and identical: leave Claude's settings file untouched.
+        if [ -f "$claude_json" ] && [ "$(jq -S -c --arg n "$name" '.mcpServers[$n] // empty' "$claude_json")" = "$(printf '%s' "$json" | jq -S -c .)" ]; then
+            echo "MCP server: $name (already set)"
+            continue
+        fi
+        claude mcp remove --scope user "$name" >/dev/null 2>&1 || true
+        claude mcp add-json --scope user "$name" "$json" >/dev/null
+        echo "MCP server: $name"
+    done < <(jq -r 'keys[]' "$servers")
+}
+
+apply_skills() {
+    mkdir -p "$HOME/.claude/skills"
+    local s n
+    for s in "$dir"/skills/*/; do
+        [ -f "${s}SKILL.md" ] || continue
+        n="$(basename "$s")"
+        ln -sfn "${s%/}" "$HOME/.claude/skills/$n"
+        echo "Skill: $n"
+    done
+}
+
+# Programs installed with npm (global, into ~/.npm-global because the Nix store
+# is read-only). Needs the network, and only installs what is missing.
+apply_tools() {
+    [ -f "$dir/npm-tools.txt" ] || return 0
+    need npm
+    local prefix="${NPM_CONFIG_PREFIX:-$HOME/.npm-global}" spec pkg rc=0
+    while IFS= read -r spec; do
+        case "$spec" in ""|"#"*) continue ;; esac
+        pkg="${spec%@*}"
+        [ -n "$pkg" ] || pkg="$spec"
+        if [ -d "$prefix/lib/node_modules/$pkg" ]; then
+            echo "Program: $spec (already installed)"
+        # DO_NOT_TRACK: the install script of some packages sends a usage ping.
+        elif DO_NOT_TRACK=1 NPM_CONFIG_PREFIX="$prefix" npm install -g "$spec" >/dev/null; then
+            echo "Program: $spec (installed)"
+        else
+            echo "Program: $spec FAILED (no network?)" >&2
+            rc=1
+        fi
+    done <"$dir/npm-tools.txt"
+    return "$rc"
+}
+
+apply() { apply_tools; apply_mcp; apply_skills; }
+
+# For the login service: do everything that is possible now, never stop at the
+# first problem, and ask systemd to try again later (exit 75) only when the
+# network was the problem.
+auto() {
+    local rc=0
+    [ -d "$dir" ] || exit 0
+    apply_skills || true
+    command -v npm >/dev/null 2>&1 && { apply_tools || rc=75; }
+    if command -v claude >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
+        apply_mcp || true
+    else
+        echo "Claude Code is not installed yet: MCP servers wait."
+    fi
+    exit "$rc"
+}
+
+save() {
+    need jq
+    [ -f "$claude_json" ] || { echo "claude-sync: $claude_json not found" >&2; exit 1; }
+    mkdir -p "$dir"
+    # env and headers values become ${KEY}; the home folder becomes ${HOME}.
+    jq --arg home "$HOME" '
+        (.mcpServers // {})
+        | map_values(
+            (if has("env") then .env |= with_entries(.value = "${" + .key + "}") else . end)
+            | (if has("headers") then .headers |= with_entries(.value = "${" + .key + "}") else . end)
+            | walk(if type == "string" then gsub($home; "${HOME}") else . end)
+          )
+        | to_entries | sort_by(.key) | from_entries
+    ' "$claude_json" >"$servers.tmp"
+    mv "$servers.tmp" "$servers"
+    echo "Saved: $(jq -r 'keys | join(", ")' "$servers")"
+    echo "Read $servers once before you push it: keys and tokens must not be in it."
+}
+
+case "${1:-}" in
+    apply) apply ;;
+    auto) auto ;;
+    tools) apply_tools ;;
+    mcp) shift; apply_mcp "$@" ;;
+    skills) apply_skills ;;
+    save) save ;;
+    *) echo "usage: claude-sync {apply|auto|tools|mcp [name...]|skills|save}" >&2; exit 2 ;;
+esac

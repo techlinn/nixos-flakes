@@ -220,7 +220,7 @@ The microphone in use is decided in three places: the system default
 (`wpctl status`, the line with `*` under Sources), what each program asks for
 (Discord opens one stream per microphone it can see), and EasyEffects, which
 moves programs that use the default onto its virtual microphone. The G522 is
-pinned in `hosts/tower/audio.nix` (see [Apps](apps.md#which-microphone-is-used)).
+pinned in `hosts/nix/audio.nix` (see [Apps](apps.md#which-microphone-is-used)).
 To look at it:
 
 ```bash

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Run this from the NixOS live USB, inside the Flakes folder:
 #     sudo bash install-from-iso.sh
-# Installs NixOS (host "tower") next to Windows. It never formats anything:
+# Installs NixOS (host "nix") next to Windows. It never formats anything:
 # you create the empty ext4 partition labelled NIXOS first (see START-HERE.md).
 # Safe to run again if it stops halfway (for example a network drop).
 set -euo pipefail
 
 HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-HOST="${PWNBOX_HOST:-tower}"   # another machine: PWNBOX_HOST=<name> sudo -E bash install-from-iso.sh
+HOST="${PWNBOX_HOST:-nix}"   # another machine: PWNBOX_HOST=<name> sudo -E bash install-from-iso.sh
 WORK="/tmp/Flakes"
 ESP_GUID="c12a7328-f81f-11d2-ba4b-00a0c93ec93b"
 

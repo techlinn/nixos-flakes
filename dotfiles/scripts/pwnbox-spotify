@@ -165,7 +165,8 @@ EOF
 fonts_block() {
     local ui app uisize spotsize
     ui="$(cache_value font-ui Manrope)"
-    app="$(cache_value font-app "Berkeley Mono")"
+    # Spotify is not a code tool: its monospace text uses the desktop font.
+    app="$(cache_value font-desk "Berkeley Mono")"
     uisize="$(cache_value font-size-ui 11)"
     case "$uisize" in '' | *[!0-9]*) uisize=11 ;; esac
     spotsize=$((uisize + 5))

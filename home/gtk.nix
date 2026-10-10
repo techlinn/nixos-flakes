@@ -11,14 +11,18 @@ let
 
   wallpapers = "${homeDir}/.local/share/pwnbox/wallpapers";
   gtkColors = "file://${homeDir}/.cache/pwnbox/theme/gtk-colors.css";
+  # monospace text in GTK apps = the interface font (written by pwnbox-theme)
+  gtkFonts = "file://${homeDir}/.cache/pwnbox/theme/gtk-fonts.css";
 
   gtk3ExtraCss = ''
     @import url("file://${homeDir}/.config/pwnbox/gtk/gtk-3.0-base.css");
     @import url("${gtkColors}");
+    @import url("${gtkFonts}");
   '';
   gtk4ExtraCss = ''
     @import url("file://${homeDir}/.config/pwnbox/gtk/gtk-4.0-base.css");
     @import url("${gtkColors}");
+    @import url("${gtkFonts}");
   '';
 in
 {
@@ -79,7 +83,7 @@ in
       clock-format = "24h";
       font-name = "Manrope 10";
       document-font-name = "Manrope 10";
-      monospace-font-name = "Berkeley Mono 11";
+      monospace-font-name = "JetBrains Mono 11";
       font-hinting = "slight";
       enable-animations = true;
       enable-hot-corners = false;

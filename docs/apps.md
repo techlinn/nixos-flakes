@@ -247,7 +247,7 @@ no program is recording from it, which is normal.
 
 ### Which microphone is used
 
-`hosts/tower/audio.nix` makes the Logitech G522 headset the preferred
+`hosts/nix/audio.nix` makes the Logitech G522 headset the preferred
 microphone and speaker (the rule gives it the highest priority) and switches off
 the webcam's sound card, so the webcam's microphone can never be chosen.
 Before this, the headset and the webcam microphone ranked exactly the same and

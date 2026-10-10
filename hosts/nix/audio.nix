@@ -11,7 +11,7 @@
   # The names below are this machine's; list yours with `wpctl status` and
   # `pw-dump | grep device.name`. The rules apply at the next WirePlumber start
   # (log out and in, or `systemctl --user restart wireplumber`).
-  services.pipewire.wireplumber.extraConfig."51-tower-audio" = {
+  services.pipewire.wireplumber.extraConfig."51-nix-audio" = {
     "monitor.alsa.rules" = [
       {
         # The webcam's sound card is switched off, so it can never be picked.

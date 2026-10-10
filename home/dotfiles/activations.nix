@@ -77,6 +77,12 @@ in
     if [ ! -e "$theme_dir/animations" ]; then
       run sh -c "printf '%s' on > '$theme_dir/animations'"
     fi
+    # One-time switch of the system font (everyday apps) to Manrope, the font Discord
+    # uses; the bar and the desktop keep Berkeley Mono ("Desktop font"). Afterwards
+    # the fonts are whatever ALT + S sets.
+    if [ ! -e "$theme_dir/font-ui-manrope" ]; then
+      run sh -c "printf '%s' 'Manrope' > '$theme_dir/font-ui' && printf '%s' 'Berkeley Mono' > '$theme_dir/font-desk' && : > '$theme_dir/font-ui-manrope'"
+    fi
     if [ ! -e "$theme_dir/font-size-ui" ]; then
       run sh -c "printf '%s' 11 > '$theme_dir/font-size-ui'"
     fi

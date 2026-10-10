@@ -7,7 +7,7 @@
     ./accessibility.nix  # at-spi2 bus (off if pwnbox.desktop.accessibility = false)
     ./hyprland.nix       # Hyprland compositor
     ./gnome.nix          # GNOME services (keyring, portals, settings-daemon)
-    ./fonts.nix          # system fonts (Manrope + Berkeley Mono)
+    ./fonts.nix          # system fonts (Berkeley Mono + JetBrains Mono)
     ./gtk.nix            # system GTK theming
   ];
 }

@@ -1,4 +1,4 @@
-# This machine (tower): identity, hardware, NVIDIA, audio, enabled features.
+# This machine (nix): identity, hardware, NVIDIA, audio, enabled features.
 { lib, ... }:
 {
   imports = [
@@ -10,7 +10,7 @@
 
   pwnbox = {
     # Who you are + where you are.
-    hostName = "tower";
+    hostName = "nix";
     username = "techh";
     fullName = "techh";
     timeZone = "Europe/Berlin";

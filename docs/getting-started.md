@@ -74,8 +74,8 @@ What the installer works out for the new machine, in `hosts/<its name>/`:
 - An NVIDIA card, if there is one (`nvidia.nix`).
 - Nothing about this machine's two monitors or its headset is carried over.
   Monitors use their own best mode. For a fixed layout add
-  `pwnbox.desktop.monitors` to the host file (see `hosts/tower/default.nix`),
-  and for a headset rule copy `hosts/tower/audio.nix` and change the names.
+  `pwnbox.desktop.monitors` to the host file (see `hosts/nix/default.nix`),
+  and for a headset rule copy `hosts/nix/audio.nix` and change the names.
 
 What is **not** in the folder, because it is personal data and not
 configuration: logins (Discord, Spotify, GitHub, browser), Zen's bookmarks,

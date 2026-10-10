@@ -21,7 +21,7 @@ documentation and re-apply, not as a nixpkgs overlay.
 
 To re-apply after a fresh QEMU 10.1.0 extract:
     cd /home/techh/VMs/build/qemu-10.1.0
-    patch -p1 < /home/techh/Flakes/hosts/tower/qemu-pit-acpi.patch
+    patch -p1 < /home/techh/Flakes/hosts/nix/qemu-pit-acpi.patch
     nix-shell -p ninja meson pkg-config gcc glib pixman zlib python3 \
               snappy lzo dtc numactl vde2 libaio bzip2 libseccomp \
               liburing capstone \
