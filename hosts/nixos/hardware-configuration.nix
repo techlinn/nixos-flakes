@@ -1,3 +1,5 @@
+# PLACEHOLDER from a VM, not any real machine: the disk UUID below exists nowhere else.
+# install.sh replaces this with the real one; booting it unreplaced ends in emergency mode.
 { config, lib, pkgs, modulesPath, ... }:
 
 {

@@ -229,7 +229,7 @@ Rectangle {
         height: 2
         width: parent.width * Math.max(0, Math.min(1, root.remaining / root.duration))
         color: root.accentColor
-        visible: root.remaining > 0
+        visible: !root.critical
     }
 
     MouseArea {
@@ -242,7 +242,8 @@ Rectangle {
     Timer {
         interval: 50
         repeat: true
-        running: true
+        // a critical notification stays until dismissed, and hovering pauses it
+        running: !root.critical && !root.hovered
         onTriggered: {
             root.remaining -= interval;
             if (root.remaining <= 0) {

@@ -19,6 +19,8 @@
     desktop = {
       enable = true;
       accessibility = false;
+      # Graphical login screen. Set to "ly" for the old console one.
+      loginManager = "sddm";
       resolution = "highrr";
       # Hyprland monitor rules: "name, mode, position, scale". Run `hyprctl monitors` to see names.
       monitors = [

@@ -1,10 +1,10 @@
-# ly: console TUI login manager (used instead of GDM/SDDM).
+# ly: console TUI login manager, used when pwnbox.desktop.loginManager = "ly".
 {
   config,
   lib,
   ...
 }:
-lib.mkIf config.pwnbox.desktop.enable {
+lib.mkIf (config.pwnbox.desktop.enable && config.pwnbox.desktop.loginManager == "ly") {
   services.displayManager.ly = {
     enable = true;
 
@@ -25,6 +25,4 @@ lib.mkIf config.pwnbox.desktop.enable {
       edge_margin = 1;
     };
   };
-
-  services.displayManager.defaultSession = "hyprland";
 }

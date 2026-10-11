@@ -108,6 +108,8 @@ in
     # by Hyprland, not here, see pwnbox-theme's ensure_bar.
     if [ -x "$HOME/.scripts/pwnbox-theme" ]; then
       run env PWNBOX_REBUILD=1 sh -c '"$HOME/.scripts/pwnbox-theme" borders >/dev/null 2>&1 || true'
+      # The login screen reads its palette from /var/lib/pwnbox-greeter, so refresh it here too.
+      run env PWNBOX_REBUILD=1 sh -c '"$HOME/.scripts/pwnbox-theme" greeter >/dev/null 2>&1 || true'
     fi
   '';
 }

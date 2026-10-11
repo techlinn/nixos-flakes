@@ -23,6 +23,9 @@
     automatic = true;
     dates = "daily";
     options = "--delete-older-than 7d";
+    # Without this a GC missed while the machine was off runs during the next
+    # boot, where it cost ~7s of disk against everything else starting.
+    randomizedDelaySec = "45min";
   };
 
   nixpkgs.config.allowUnfree = true;

@@ -1,0 +1,12 @@
+[SddmGreeterTheme]
+Name=pwnbox
+Description=Login screen matching the pwnbox lock screen, coloured from the current theme
+Author=techh
+License=MIT
+Type=sddm-theme
+Version=1.0
+Screenshot=preview.png
+MainScript=Main.qml
+ConfigFile=theme.conf
+Theme-Id=pwnbox
+Theme-API=2.0

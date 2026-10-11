@@ -20,6 +20,7 @@ state="$cache/wallpaper"
 custom_state="$cache/custom-theme"
 style_state="$cache/barstyle"
 default_wall="$HOME/.config/hypr/wall.png"
+greeter_drop="/var/lib/pwnbox-greeter"
 picker_cfg="$HOME/.config/rofi/picker.rasi"
 barstyle_cfg="$HOME/.config/rofi/barstyle.rasi"
 menu_cfg="$HOME/.config/rofi/menu.rasi"
@@ -322,6 +323,7 @@ apply_fonts() {
     fi
 
     sync_hyprlock
+    sync_greeter
     sync_gtk_fonts
     apply_zen_fonts
     sync_telegram_fonts
@@ -486,20 +488,69 @@ sync_quickshell() {
 # with its own editor colours (which colour keywords, functions, types ... get);
 # it is laid over the generated style, so anything it does not mention still
 # follows the palette. apply_theme_look keeps the current one in the cache.
+# A lightness ladder from the palette: t2 the brightest text, t5 the quietest.
+zed_derived_style() {
+    load_app_palette || return 1
+    local t2 t2b t3 t3b t4 t5 acc sel selbg hi
+    mix_hex "${AP[bg]}" "${AP[fg]}" 72; t2="$MIX_RESULT"
+    mix_hex "${AP[bg]}" "${AP[fg]}" 74; t2b="$MIX_RESULT"
+    mix_hex "${AP[bg]}" "${AP[fg]}" 60; t3="$MIX_RESULT"
+    t3b="${AP[color7]}"
+    t4="${AP[color8]:-${AP[color7]}}"
+    mix_hex "${AP[bg]}" "$t4" 92; t5="$MIX_RESULT"
+    acc="$(cat "$cache/border-override" 2>/dev/null)" || acc=""
+    [ -n "$acc" ] || acc="${AP[color4]}"
+    sel="$(sem_get selection)" || sel="${AP[highest]}"
+    selbg="${AP[highest]}"; hi="${AP[higher]}"
+    printf '{'
+    printf '"players":[{"background":"#%s","cursor":"#%s","selection":"#%s22"}],' "${AP[bg]}" "$acc" "${AP[fg]}"
+    printf '"text":"#%s","text.muted":"#%s","text.placeholder":"#%s","text.disabled":"#%s","text.accent":"#%s",' \
+        "$t2" "$t3" "$t4" "$t4" "$acc"
+    printf '"icon":"#%s","icon.muted":"#%s","icon.accent":"#%s",' "$t2" "$t4" "$acc"
+    printf '"border":"#%s","border.variant":"#%s","border.focused":"#%s","border.selected":"#%s","panel.focused_border":"#%s",' \
+        "$sel" "$sel" "$acc" "$acc" "$acc"
+    printf '"element.selected":"#%s","element.hover":"#%s","ghost_element.selected":"#%s","ghost_element.hover":"#%s",' \
+        "$selbg" "$hi" "$selbg" "$hi"
+    printf '"tab.active_foreground":"#%s","tab.inactive_foreground":"#%s",' "$acc" "$t4"
+    printf '"editor.foreground":"#%s","editor.line_number":"#%s","editor.active_line_number":"#%s",' "$t2b" "$t5" "$t2"
+    printf '"editor.active_line.background":"#%s","editor.highlighted_line.background":"#%s",' "$selbg" "$selbg"
+    printf '"editor.indent_guide":"#%s","editor.indent_guide_active":"#%s",' "$sel" "$t4"
+    printf '"editor.document_highlight.bracket_background":"#%s40",' "$acc"
+    printf '"syntax":{'
+    printf '"comment":{"color":"#%s","font_style":"italic"},"comment.doc":{"color":"#%s","font_style":"italic"},' "$t5" "$t5"
+    printf '"keyword":{"color":"#%s","font_style":"italic"},' "${AP[color1]}"
+    printf '"function":{"color":"#%s"},"function.method":{"color":"#%s"},"constructor":{"color":"#%s"},' \
+        "${AP[color12]}" "${AP[color12]}" "${AP[color12]}"
+    printf '"type":{"color":"#%s"},"type.builtin":{"color":"#%s"},' "${AP[color2]}" "${AP[color2]}"
+    printf '"constant":{"color":"#%s"},"attribute":{"color":"#%s"},' "${AP[color12]}" "${AP[color12]}"
+    printf '"number":{"color":"#%s"},"boolean":{"color":"#%s"},' "${AP[color9]}" "${AP[color9]}"
+    printf '"variable":{"color":"#%s"},"variable.parameter":{"color":"#%s"},"variable.special":{"color":"#%s"},' \
+        "$t2b" "$t3b" "${AP[color1]}"
+    printf '"property":{"color":"#%s"},"operator":{"color":"#%s"},' "$t3b" "$t3"
+    printf '"punctuation":{"color":"#%s"},"punctuation.delimiter":{"color":"#%s"},"punctuation.bracket":{"color":"#%s"},' \
+        "$t4" "$t4" "$t4"
+    printf '"string":{"color":"#%s"},"string.escape":{"color":"#%s"},' "${AP[color11]}" "${AP[color1]}"
+    printf '"tag":{"color":"#%s"},"title":{"color":"#%s","font_weight":700},' "$acc" "$acc"
+    printf '"link_text":{"color":"#%s"},"link_uri":{"color":"#%s"}' "${AP[color11]}" "$t3b"
+    printf '}}'
+}
+
 sync_zed() {
-    local src="$1" out="$HOME/.config/zed/themes/pwnbox.json" over="$cache/zed-override.json" tmp
+    local src="$1" out="$HOME/.config/zed/themes/pwnbox.json" tmp style
     [ -f "$src" ] || return 0
     mkdir -p "$HOME/.config/zed/themes" 2>/dev/null || true
-    if [ -f "$over" ] && command -v jq >/dev/null 2>&1; then
+    style="$cache/.zed-style.json"
+    if command -v jq >/dev/null 2>&1 && zed_derived_style >"$style" 2>/dev/null && [ -s "$style" ]; then
         tmp="$cache/.zed-theme.tmp"
-        if jq --slurpfile o "$over" '.themes[0].style = (.themes[0].style * $o[0])' "$src" >"$tmp" 2>/dev/null \
+        if jq --slurpfile o "$style" '.themes[0].style = (.themes[0].style * $o[0])' "$src" >"$tmp" 2>/dev/null \
             && [ -s "$tmp" ]; then
             cat "$tmp" >"$out" 2>/dev/null || true
-            rm -f "$tmp"
+            rm -f "$tmp" "$style"
             return 0
         fi
         rm -f "$tmp"
     fi
+    rm -f "$style"
     cp -f "$src" "$out" 2>/dev/null || true
 }
 
@@ -514,15 +565,47 @@ declare -A AP=()
 load_app_palette() {
     local nv="$cache/nvim-palette.lua" k v line
     [ -f "$nv" ] || return 1
+    # Six generators want this, and it is the same every time: compute it once.
+    local memo="$cache/.app-palette" stamp
+    stamp="$(cat "$nv" "$cache/theme-colors" "$cache/border-override" 2>/dev/null | cksum)"
+    if [ "${AP_STAMP:-}" = "$stamp" ] && [ "${#AP[@]}" -gt 0 ]; then
+        return 0
+    fi
+    if [ -f "$memo" ] && [ "$(head -n1 "$memo" 2>/dev/null)" = "$stamp" ]; then
+        AP=()
+        while IFS='=' read -r k v; do
+            [ -n "$k" ] && AP[$k]="$v"
+        done < <(tail -n +2 "$memo")
+        AP_STAMP="$stamp"
+        return 0
+    fi
     AP=()
+    # One awk pass for all 18 values instead of a sed+head per key.
     local keys="bg fg color0 color1 color2 color3 color4 color5 color6 color9 color10 color11 color12"
     local args=()
+    while IFS='=' read -r k v; do
+        [ -n "$k" ] && AP[$k]="$v"
+    done < <(awk '
+        match($0, /^[[:space:]]*[A-Za-z_0-9]+[[:space:]]*=[[:space:]]*"#?[0-9a-fA-F]{6}"/) {
+            key = $1
+            sub(/^[[:space:]]*/, "", key)
+            if (key ~ /=/) sub(/=.*/, "", key)
+            if (key in seen) next
+            if (match($0, /"#?[0-9a-fA-F]{6}"/)) {
+                val = substr($0, RSTART, RLENGTH)
+                gsub(/["#]/, "", val)
+                seen[key] = 1
+                print key "=" val
+            }
+        }' "$nv")
     for k in $keys; do
-        v="$(sed -nE "s/^[[:space:]]*${k}[[:space:]]*=[[:space:]]*\"#?([0-9a-fA-F]{6})\".*/\1/p" "$nv" | head -1)"
-        [ -n "$v" ] || return 1
-        AP[$k]="$v"
-        args+=("$v")
+        [ -n "${AP[$k]:-}" ] || return 1
+        args+=("${AP[$k]}")
     done
+    # Cards, panels and hovers come off color0 unless the theme names another base.
+    local surf
+    surf="$(sem_get surface 2>/dev/null || true)"
+    [ -n "$surf" ] && args[2]="$surf"
     while IFS='=' read -r k v; do
         [ -n "$k" ] && AP[$k]="$v"
     done < <(awk '
@@ -582,7 +665,118 @@ load_app_palette() {
                 h *= 60
             }
             printf "accenthsl=%d %d%% %d%%\n", h + 0.5, s * 100 + 0.5, l * 100 + 0.5
+            printf "accenth=%d\n", h + 0.5
         }' "${args[@]}")
+    apply_theme_colors
+    # Through a temp file: the app syncs run at the same time.
+    AP_STAMP="$stamp"
+    { printf '%s\n' "$stamp"
+      for k in "${!AP[@]}"; do printf '%s=%s\n' "$k" "${AP[$k]}"; done
+    } >"$memo.$$" 2>/dev/null && mv -f "$memo.$$" "$memo" 2>/dev/null
+    rm -f "$memo.$$" 2>/dev/null || true
+}
+
+# A theme may pin any of the colours above in theme.conf. Declared wins;
+# anything absent stays derived.
+declare -A SEM_SLOT=(
+    [accent_strong]=fillaccent [accent_deep]=fillpurple [link]=link
+    [success]=fillgreen        [success_text]=greentext [warning]=yellowtext
+    [error]=fillred            [error_text]=redtext     [on_accent]=onaccent
+    [on_green]=ongreen         [on_purple]=onpurple
+)
+apply_theme_colors() {
+    local sem="$cache/theme-colors" k v
+    [ -f "$sem" ] || return 0
+    declare -A want=()
+    while IFS='=' read -r k v; do
+        [ -n "${SEM_SLOT[$k]:-}" ] || continue
+        [[ "$v" =~ ^[0-9a-fA-F]{6}$ ]] && want[$k]="$v"
+    done <"$sem"
+    # Text on the accent also reads on the other filled buttons unless the
+    # theme names those separately.
+    if [ -n "${want[on_accent]:-}" ]; then
+        for k in on_green on_purple; do
+            [ -n "${want[$k]:-}" ] || want[$k]="${want[on_accent]}"
+        done
+    fi
+    # The accent's hue drives the re-tint of Discord's own green/blue/teal.
+    if [ -n "${want[accent_strong]:-}" ]; then
+        AP[accenthsl]="$(hsl_of_hex "${want[accent_strong]}")"
+        AP[accenth]="${AP[accenthsl]%% *}"
+    fi
+    for k in "${!want[@]}"; do AP[${SEM_SLOT[$k]}]="${want[$k]}"; done
+}
+
+# One colour the current theme named for itself, or nothing.
+sem_get() {
+    local sem="$cache/theme-colors" v
+    [ -f "$sem" ] || return 1
+    v="$(sed -nE "s/^$1=([0-9a-fA-F]{6})\$/\1/p" "$sem" | head -1)"
+    [ -n "$v" ] || return 1
+    printf '%s' "$v"
+}
+
+# The theme's named colours under GTK's own variable names, so selections and
+# button fills follow the theme instead of the raw accent.
+gtk_theme_colors() {
+    local fill on soft sel
+    fill="$(sem_get accent_fill || true)"
+    on="$(sem_get on_accent || true)"
+    soft="$(sem_get link || true)"
+    sel="$(sem_get selection || true)"
+    [ -n "$fill$on$soft$sel" ] || return 0
+    printf '\n/* the colours this theme names for itself */\n'
+    [ -n "$fill" ] && printf '@define-color accent_bg_color #%s;\n' "$fill"
+    [ -n "$on" ] && printf '@define-color accent_fg_color #%s;\n' "$on"
+    [ -n "$soft" ] && printf '@define-color accent_color #%s;\n' "$soft"
+    if [ -n "$sel" ]; then
+        printf '@define-color theme_selected_bg_color #%s;\n' "$sel"
+        printf '@define-color theme_selected_fg_color @theme_fg_color;\n'
+    fi
+    return 0
+}
+
+# OKLCH hue in degrees. Not the HSL hue: #944444 is 0 in HSL but 22 in OKLCH.
+oklch_hue_of_hex() {
+    awk -v hex="${1#\#}" '
+    function hx(c) { return index("0123456789abcdef", tolower(c)) - 1 }
+    function byte(h, i) { return hx(substr(h, i, 1)) * 16 + hx(substr(h, i + 1, 1)) }
+    function lin(v) { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ^ 2.4 }
+    function cbrt(x) { return x < 0 ? -((-x) ^ (1/3)) : x ^ (1/3) }
+    BEGIN {
+        r = lin(byte(hex,1)); g = lin(byte(hex,3)); b = lin(byte(hex,5))
+        l = 0.4122214708*r + 0.5363325363*g + 0.0514459929*b
+        m = 0.2119034982*r + 0.6806995451*g + 0.1073969566*b
+        s = 0.0883024619*r + 0.2817188376*g + 0.6299787005*b
+        l = cbrt(l); m = cbrt(m); s = cbrt(s)
+        A = 1.9779984951*l - 2.4285922050*m + 0.4505937099*s
+        B = 0.0259040371*l + 0.7827717662*m - 0.8086757660*s
+        h = atan2(B, A) * 57.29577951308232
+        if (h < 0) h += 360
+        printf "%d", h + 0.5
+    }'
+}
+
+# "h s% l%" of a six-digit hex, in the same form as the awk block's accenthsl.
+hsl_of_hex() {
+    awk -v hex="${1#\#}" '
+    function hx(c) { return index("0123456789abcdef", tolower(c)) - 1 }
+    BEGIN {
+        r = (hx(substr(hex,1,1)) * 16 + hx(substr(hex,2,1))) / 255
+        g = (hx(substr(hex,3,1)) * 16 + hx(substr(hex,4,1))) / 255
+        b = (hx(substr(hex,5,1)) * 16 + hx(substr(hex,6,1))) / 255
+        mx = r > g ? (r > b ? r : b) : (g > b ? g : b)
+        mn = r < g ? (r < b ? r : b) : (g < b ? g : b)
+        l = (mx + mn) / 2; d = mx - mn; h = 0; s = 0
+        if (d > 0) {
+            s = d / (1 - (2 * l - 1 < 0 ? -(2 * l - 1) : 2 * l - 1))
+            if (mx == r) h = (g - b) / d + (g < b ? 6 : 0)
+            else if (mx == g) h = (b - r) / d + 2
+            else h = (r - g) / d + 4
+            h *= 60
+        }
+        printf "%d %d%% %d%%", h + 0.5, s * 100 + 0.5, l * 100 + 0.5
+    }'
 }
 
 TG_BG=""; TG_FG=""; TG_CHROM=()
@@ -664,6 +858,59 @@ load_recolor_colors() {
     fi
 }
 
+# Telegram's accent keys. The base theme's accent is white and its links blue;
+# these give it the theme's own, filling small marks and leaving big areas neutral.
+telegram_theme_colors() {
+    local fill on soft acc good big big2 big3 fillhi softhi softhi2
+    load_app_palette || return 1
+    fill="$(sem_get accent_strong)" || fill="${AP[fillaccent]}"
+    on="$(sem_get on_accent)" || on="${AP[onaccent]}"
+    soft="$(sem_get link)" || soft="${AP[link]}"
+    good="$(sem_get success_text)" || good="${AP[greentext]}"
+    acc="${AP[color4]}"
+    big="${AP[highest]}"
+    big2="$(lighten_hex "#$big" 4)"; big2="${big2#\#}"
+    big3="$(lighten_hex "#$big" 8)"; big3="${big3#\#}"
+    # toward the link colour, not toward white: keeps the accent's saturation
+    mix_hex "$fill" "$soft" 18; fillhi="$MIX_RESULT"
+    softhi="$(lighten_hex "#$soft" 20)"; softhi="${softhi#\#}"
+    softhi2="$(lighten_hex "#$soft" 40)"; softhi2="${softhi2#\#}"
+    # big areas: the open chat, active buttons and your own messages stay neutral
+    local k
+    for k in windowBgActive activeButtonBg dialogsBgActive; do printf '%s: #%s;\n' "$k" "$big"; done
+    printf 'activeButtonBgOver: #%s;\nactiveButtonBgRipple: #%s;\nmsgOutBg: #%s;\n' "$big2" "$big3" "${AP[higher]}"
+    printf 'windowFgActive: #%s;\n' "${AP[fg]}"
+    for k in activeButtonFg activeButtonSecondaryFg; do printf '%s: #%s;\n' "$k" "$soft"; done
+    # small marks are filled with the accent
+    for k in dialogsUnreadBg sideBarBadgeBg msgFileInBg msgFileOutBg overviewCheckBgActive \
+        profileVerifiedCheckBg youtubePlayIconBg videoPlayIconBg; do
+        printf '%s: #%s;\n' "$k" "$fill"
+    done
+    for k in msgFileInBgOver msgFileInBgSelected msgFileOutBgOver msgFileOutBgSelected; do
+        printf '%s: #%s;\n' "$k" "$fillhi"
+    done
+    for k in dialogsUnreadFg historyFileInIconFg historyFileOutIconFg overviewCheckFgActive \
+        profileVerifiedCheckFg; do
+        printf '%s: #%s;\n' "$k" "$on"
+    done
+    printf 'dialogsVerifiedIconBg: #%s;\ndialogsVerifiedIconFg: #%s;\n' "$acc" "${AP[bg]}"
+    # accent text, links and thin lines
+    for k in windowActiveTextFg lightButtonFg historyLinkInFg historyLinkOutFg mediaviewTextLinkFg \
+        importantTooltipFgLink historyUnreadBarFg msgInServiceFg msgOutServiceFg \
+        contactsStatusFgOnline emojiIconFgActive sideBarTextFgActive sideBarIconFgActive \
+        historyVideoMessageProgressFg msgOutReplyBarSelColor historySendIconFgOver \
+        mediaviewPlaybackActiveOver; do
+        printf '%s: #%s;\n' "$k" "$soft"
+    done
+    printf 'lightButtonFgOver: #%s;\n' "$softhi"
+    for k in msgInServiceFgSelected msgOutServiceFgSelected; do printf '%s: #%s;\n' "$k" "$softhi2"; done
+    for k in activeLineFg msgOutReplyBarColor historySendIconFg sliderBgActive mediaPlayerActiveFg \
+        mediaviewPlaybackActive msgWaveformInActive msgWaveformOutActive; do
+        printf '%s: #%s;\n' "$k" "$acc"
+    done
+    printf 'boxTextFgGood: #%s;\n' "$good"
+}
+
 sync_telegram() {
     local base="$HOME/.config/telegram/awesome.tdesktop-theme"
     [ -f "$base" ] || return 0
@@ -682,10 +929,10 @@ sync_telegram() {
             printf '%s\n' "$line" >>"$tmp"
         fi
     done <"$base"
-    # A theme's own Telegram colours (themes/<Name>/telegram.tdesktop-theme, kept
-    # in the cache by apply_theme_look): each "key: value;" line replaces that
-    # key above, or is added if the base theme does not have it.
-    local over="$cache/telegram-override.tdesktop-theme"
+    # The accent keys from the palette: each "key: value;" line replaces that key
+    # above, or is added if the base theme does not have it.
+    local over="$cache/.telegram-colors.tmp"
+    load_app_palette && telegram_theme_colors >"$over" 2>/dev/null || : >"$over"
     if [ -s "$over" ]; then
         awk '
             function key(l,  k) {
@@ -698,6 +945,7 @@ sync_telegram() {
         ' "$over" "$tmp" >"$tmp.merged" 2>/dev/null && [ -s "$tmp.merged" ] && mv -f "$tmp.merged" "$tmp"
         rm -f "$tmp.merged"
     fi
+    rm -f "$over"
     local out="$HOME/.config/telegram/pwnbox.tdesktop-theme"
     if ! cmp -s "$tmp" "$out" 2>/dev/null; then
         cat "$tmp" >"$out"
@@ -824,13 +1072,14 @@ discord_palette_css() {
     printf '  --pw-rgb-accent: %s;\n  --pw-rgb-link: %s;\n  --pw-rgb-red: %s;\n  --pw-rgb-green: %s;\n  --pw-rgb-yellow: %s;\n' \
         "$(rgb_triplet "${AP[fillaccent]}")" "$(rgb_triplet "${AP[link]}")" "$(rgb_triplet "${AP[fillred]}")" \
         "$(rgb_triplet "${AP[fillgreen]}")" "$(rgb_triplet "${AP[color3]}")"
+    # Discord's own green/blue/teal/blurple fill large buttons, so they take the
+    # accent's hue (OKLCH: the scale rules are oklch()) and keep their lightness.
+    local okh; okh="$(oklch_hue_of_hex "${AP[fillaccent]}")"
+    printf '  --pw-accent-h: %s;\n' "$okh"
+    printf '  --pw-green-h: %s;\n  --pw-blue-h: %s;\n  --pw-teal-h: %s;\n  --pw-purple-h: %s;\n' \
+        "$okh" "$okh" "$okh" "$okh"
     printf '}\n'
     cat "$tokens"
-    # A theme's own Discord colours, if it has any (themes/<Name>/discord.css).
-    if [ -f "$cache/discord-override.css" ]; then
-        printf '\n'
-        cat "$cache/discord-override.css"
-    fi
 }
 
 # OBS Studio theme. OBS themes are small files that rename colours of its
@@ -864,19 +1113,14 @@ obs_theme_css() {
                 mix(chat, fg, 31), mix(chat, fg, 24), mix(chat, fg, 18), mix(chat, fg, 12), mix(chat, fg, 6), chat, bg, deep
             printf "    --white1: #%s;\n    --white2: #%s;\n    --white3: #%s;\n    --white4: #%s;\n    --white5: #%s;\n\n", \
                 fg, mix(bg, fg, 92), mix(bg, fg, 84), mix(bg, fg, 76), ARGV[11]
-            printf "    --black1: #%s;\n    --black2: #%s;\n    --black3: #%s;\n    --black4: #%s;\n    --black5: #%s;\n}\n", \
+            printf "    --black1: #%s;\n    --black2: #%s;\n    --black3: #%s;\n    --black4: #%s;\n    --black5: #%s;\n\n", \
                 deep, mix(deep, bg, 60), mix(chat, fg, 6), mix(chat, fg, 18), mix(chat, fg, 24)
+            # selections and highlights stay neutral greys; the accent is kept
+            # for the focus ring and the selected tab line
+            printf "    --primary: var(--grey4);\n    --primary_light: var(--grey3);\n    --primary_lighter: var(--blue1);\n    --primary_dark: var(--grey5);\n    --primary_darker: var(--grey6);\n    --tab_border_selected: var(--blue2);\n}\n"
         }' "${AP[bg]}" "${AP[fg]}" "${AP[chat]}" "${AP[deep]}" "${AP[color4]}" "${AP[color1]}" "${AP[color2]}" "${AP[color3]}" \
         "${AP[color5]}" "${AP[color6]}" "${AP[muted]}" >"$cache/.obs-theme.body" || return 1
-    if [ -s "$cache/obs-override.txt" ]; then
-        # A theme's own variable lines (themes/<Name>/obs.txt) go last in the block.
-        sed '$d' "$cache/.obs-theme.body"
-        printf '\n    /* from the theme */\n'
-        cat "$cache/obs-override.txt"
-        printf '}\n'
-    else
-        cat "$cache/.obs-theme.body"
-    fi
+    cat "$cache/.obs-theme.body"
     rm -f "$cache/.obs-theme.body"
 }
 
@@ -915,9 +1159,61 @@ apply_obs() {
 # the theme swaps those, plus the Firefox ones it does not derive from them
 # (panels, address bar, tab text). The same block goes in userChrome.css (the
 # browser window) and userContent.css (about: pages: new tab, settings).
+# Every colour in config/zen/userstyles is a sentinel whose last byte is a
+# palette slot (1-27), as #f0f0NN, %23f0f0NN or "240, 240, N". This swaps them
+# all for the current palette and writes the bundle Zen and the extension read.
+sync_userstyles() {
+    local src outdir i hex mark r g b s0 s1 s2 crust
+    src="${XDG_CONFIG_HOME:-$HOME/.config}/pwnbox/zen/userstyles"
+    [ -d "$src" ] || return 0
+    load_app_palette || return 1
+    outdir="$cache/userstyles"
+    mkdir -p "$outdir" || return 1
+    # the three derived surfaces and the darkened background the styles expect
+    s0="$(lighten_hex "#${AP[bg]}" 8)";  s0="${s0#\#}"
+    s1="$(lighten_hex "#${AP[bg]}" 12)"; s1="${s1#\#}"
+    s2="$(lighten_hex "#${AP[bg]}" 16)"; s2="${s2#\#}"
+    mix_hex "${AP[bg]}" "000000" 20; crust="$MIX_RESULT"
+    local -a slot=()
+    slot[1]="${AP[color0]}";  slot[2]="${AP[bg]}";       slot[3]="$crust"
+    slot[4]="${AP[fg]}";      slot[5]="${AP[color7]}";   slot[6]="${AP[color8]}"
+    slot[7]="$s2";            slot[8]="$s1";             slot[9]="$s0"
+    slot[10]="$s2";           slot[11]="$s1";            slot[12]="$s0"
+    slot[13]="${AP[color7]}"; slot[14]="${AP[color5]}";  slot[15]="${AP[color5]}"
+    slot[16]="${AP[color4]}"; slot[17]="${AP[color1]}";  slot[18]="${AP[color5]}"
+    slot[19]="${AP[color3]}"; slot[20]="${AP[color3]}";  slot[21]="${AP[color2]}"
+    slot[22]="${AP[color6]}"; slot[23]="${AP[color6]}";  slot[24]="${AP[color4]}"
+    slot[25]="${AP[color4]}"; slot[26]="${AP[color4]}";  slot[27]="${AP[color4]}"
+    # descending, so "240, 240, 2" cannot eat the prefix of "240, 240, 27"
+    local -a sed_args=()
+    for i in $(seq 27 -1 1); do
+        hex="${slot[$i]}"
+        [ -n "$hex" ] || continue
+        mark="$(printf 'f0f0%02x' "$i")"
+        r=$((16#${hex:0:2})); g=$((16#${hex:2:2})); b=$((16#${hex:4:2}))
+        sed_args+=(-e "s/#$mark/#$hex/g" -e "s/%23$mark/%23$hex/g" -e "s/240, 240, $i/$r, $g, $b/g")
+    done
+    # One sed over all the files: it concatenates them itself, which is the bundle.
+    {
+        sed "${sed_args[@]}" "$src"/*.css 2>/dev/null || true
+        printf '* { border-color: #%s !important; outline-color: #%s !important; }\n' "$s0" "$s1"
+    } >"$outdir/.all.tmp" 2>/dev/null
+    [ -s "$outdir/.all.tmp" ] || { rm -f "$outdir/.all.tmp"; return 1; }
+    mv -f "$outdir/.all.tmp" "$outdir/pwnbox-all.user.css"
+    date +%s >"$outdir/version.txt"
+    printf '{"border":"#%s","outline":"#%s"}\n' "$s0" "$s1" >"$outdir/theme.json"
+}
+
 zen_palette_block() {
     load_app_palette || return 1
     local line="color-mix(in srgb, #${AP[fg]} 14%, #${AP[bg]})"
+    # Panels, hovers and the chrome border stay neutral surfaces rather than
+    # tints of the accent; a theme may name the border and the button fill.
+    local zprim zfill zline
+    zprim="$(cat "$cache/border-override" 2>/dev/null)" || zprim=""
+    [ -n "$zprim" ] || zprim="${AP[color4]}"
+    zfill="$(sem_get accent_fill)" || zfill="${AP[fillaccent]}"
+    if zline="$(sem_get selection)"; then zline="#$zline"; else zline="$line"; fi
     printf '/* pwnbox palette: %s. Written by pwnbox-theme; edits are overwritten. */\n' \
         "$(cat "$custom_state" 2>/dev/null || echo wallpaper)"
     printf ':root,\n:host(:is(.anonymous-content-host, notification-message)) {\n'
@@ -926,10 +1222,10 @@ zen_palette_block() {
     printf '  --zen-main-browser-background: #%s !important;\n  --zen-main-browser-background-toolbar: #%s !important;\n' "${AP[bg]}" "${AP[bg]}"
     printf '  --zen-themed-toolbar-bg-transparent: #%s !important;\n' "${AP[bg]}"
     printf '  --zen-dialog-background: #%s !important;\n  --zen-urlbar-background: #%s !important;\n' "${AP[chat]}" "${AP[higher]}"
-    printf '  --zen-colors-primary: #%s !important;\n  --zen-colors-primary-foreground: #%s !important;\n' "${AP[color4]}" "${AP[link]}"
-    printf '  --zen-colors-secondary: color-mix(in srgb, #%s 26%%, #%s) !important;\n' "${AP[color4]}" "${AP[bg]}"
-    printf '  --zen-colors-tertiary: #%s !important;\n  --zen-colors-hover-bg: color-mix(in srgb, #%s 16%%, #%s) !important;\n' "${AP[chat]}" "${AP[color4]}" "${AP[bg]}"
-    printf '  --zen-colors-border: %s !important;\n  --zen-colors-border-contrast: color-mix(in srgb, #%s 12%%, transparent) !important;\n' "$line" "${AP[fg]}"
+    printf '  --zen-colors-primary: #%s !important;\n  --zen-colors-primary-foreground: #%s !important;\n' "$zprim" "${AP[link]}"
+    printf '  --zen-colors-secondary: #%s !important;\n' "${AP[highest]}"
+    printf '  --zen-colors-tertiary: #%s !important;\n  --zen-colors-hover-bg: #%s !important;\n' "${AP[bg]}" "${AP[higher]}"
+    printf '  --zen-colors-border: %s !important;\n  --zen-colors-border-contrast: color-mix(in srgb, #%s 12%%, transparent) !important;\n' "$zline" "${AP[fg]}"
     printf '  --zen-colors-input-bg: #%s !important;\n' "${AP[higher]}"
     # window, toolbar, address bar, panels and tabs
     printf '  --toolbox-textcolor: #%s !important;\n  --toolbar-color: #%s !important;\n  --toolbar-bgcolor: #%s !important;\n' "${AP[fg]}" "${AP[fg]}" "${AP[bg]}"
@@ -949,15 +1245,15 @@ zen_palette_block() {
         "$line" "${AP[fg]}" "${AP[bg]}" "${AP[fg]}" "${AP[bg]}"
     printf '  --color-accent-primary: #%s !important;\n  --color-accent-primary-hover: color-mix(in srgb, #%s 88%%, white) !important;\n  --color-accent-primary-active: color-mix(in srgb, #%s 80%%, white) !important;\n' \
         "${AP[color4]}" "${AP[color4]}" "${AP[color4]}"
-    printf '  --color-accent-primary-selected: #%s !important;\n  --text-color-accent-primary-selected: #%s !important;\n' "${AP[fillaccent]}" "${AP[onaccent]}"
+    printf '  --color-accent-primary-selected: #%s !important;\n  --text-color-accent-primary-selected: #%s !important;\n' "$zfill" "${AP[onaccent]}"
     printf '  --button-background-color-primary: #%s !important;\n  --button-text-color-primary: #%s !important;\n  --button-text-color: #%s !important;\n' \
-        "${AP[fillaccent]}" "${AP[onaccent]}" "${AP[fg]}"
+        "$zfill" "${AP[onaccent]}" "${AP[fg]}"
     printf '  --table-row-background-color-alternate: #%s !important;\n  --focus-outline-color: #%s !important;\n' "${AP[higher]}" "${AP[color4]}"
     # about: pages (settings, new tab ...)
     printf '  --in-content-page-background: #%s !important;\n  --in-content-page-color: #%s !important;\n' "${AP[bg]}" "${AP[fg]}"
     printf '  --in-content-box-background: #%s !important;\n  --in-content-box-border-color: %s !important;\n' "${AP[chat]}" "$line"
     printf '  --in-content-accent-color: #%s !important;\n  --in-content-primary-button-background: #%s !important;\n  --in-content-primary-button-text-color: #%s !important;\n' \
-        "${AP[color4]}" "${AP[fillaccent]}" "${AP[onaccent]}"
+        "$zprim" "$zfill" "${AP[onaccent]}"
     printf '  --in-content-link-color: #%s !important;\n  --in-content-text-color: #%s !important;\n' "${AP[link]}" "${AP[fg]}"
     printf '}\n'
 }
@@ -980,8 +1276,14 @@ apply_zen() {
                 {
                     printf '@-moz-document url-prefix("about:") {\n'
                     cat "$block"
-                    [ -s "$cache/zen-override.css" ] && cat "$cache/zen-override.css"
                     printf '}\n'
+                    # The extension serves this live and per page, so
+                    # `touch $cache/no-userstyles` drops it from the profile.
+                    if [ ! -e "$cache/no-userstyles" ] && [ -s "$cache/userstyles/pwnbox-all.user.css" ]; then
+                        printf '/* pwnbox-userstyles-start */\n'
+                        cat "$cache/userstyles/pwnbox-all.user.css"
+                        printf '/* pwnbox-userstyles-end */\n'
+                    fi
                 } >"$tmp"
             else
                 # Zen paints the window with a gradient that it writes straight onto
@@ -994,7 +1296,6 @@ apply_zen() {
                         printf '  %s: #%s !important;\n' "$v" "${AP[bg]}"
                     done
                     printf '}\n'
-                    [ -s "$cache/zen-override.css" ] && cat "$cache/zen-override.css"
                 } >"$tmp"
             fi
             if ! cmp -s "$tmp" "$dir/chrome/$f" 2>/dev/null; then
@@ -1150,8 +1451,37 @@ apply_ida() {
         done
     fi
 
+    # IDA's arrows, checkboxes and radio marks are SVGs with @@NAME@@ holes in
+    # them (config/ida/icons); they are redrawn in the theme's colours.
+    sync_ida_icons "$dir"
+
     select_ida_theme "$root"
     select_ida_fonts "$root"
+}
+
+sync_ida_icons() {
+    local dir="$1" src="${XDG_CONFIG_HOME:-$HOME/.config}/ida/icons" f rel out tmp
+    local fg dim faint acc bg
+    [ -d "$src" ] || return 0
+    fg="$(sed -nE 's/^@def pw_text #([0-9a-f]{6});/\1/p' "$dir/theme.css" | head -1)"
+    dim="$(sed -nE 's/^@def pw_muted #([0-9a-f]{6});/\1/p' "$dir/theme.css" | head -1)"
+    faint="$(sed -nE 's/^@def pw_subtle #([0-9a-f]{6});/\1/p' "$dir/theme.css" | head -1)"
+    acc="$(sed -nE 's/^@def pw_accent #([0-9a-f]{6});/\1/p' "$dir/theme.css" | head -1)"
+    bg="$(sed -nE 's/^@def pw_bg #([0-9a-f]{6});/\1/p' "$dir/theme.css" | head -1)"
+    # all five, or an icon would end up with a bare "#" and draw nothing
+    [ -n "$fg" ] && [ -n "$dim" ] && [ -n "$faint" ] && [ -n "$acc" ] && [ -n "$bg" ] || return 0
+    tmp="$cache/.ida-icon.svg"
+    while IFS= read -r f; do
+        rel="${f#"$src"/}"
+        case "$rel" in extra/*) out="$dir/$rel" ;; *) out="$dir/icons/${rel##*/}" ;; esac
+        mkdir -p "$(dirname "$out")" 2>/dev/null || continue
+        sed -e "s/@@FG@@/#$fg/g" -e "s/@@DIM@@/#$dim/g" -e "s/@@FAINT@@/#$faint/g" \
+            -e "s/@@ACCENT@@/#$acc/g" -e "s/@@BG@@/#$bg/g" "$f" >"$tmp" 2>/dev/null || continue
+        cmp -s "$tmp" "$out" 2>/dev/null || cat "$tmp" >"$out"
+    # -L: the icon folder is a symlink into the store, and plain find would
+    # not descend into it.
+    done < <(find -L "$src" -name '*.svg' 2>/dev/null)
+    rm -f "$tmp"
 }
 
 # IDA's code views (hex, output window, registers, text input) start out in
@@ -1491,21 +1821,25 @@ apply_borders() {
     fi
 
     apply_ui_radius
-    sync_telegram
-    apply_telegram_theme
-    sync_equibop
-    # Each app is done in its own subshell so that one failing (a missing file, an
-    # app not installed) never stops the theme change or the apps after it.
-    (apply_obs) || true
-    (apply_zen) || true
-    (apply_ida) || true
+    # The visible files are written, so the apps go off the critical path. Each
+    # in its own subshell: one failing must not stop the others.
     apply_fonts
+    (
+        (sync_telegram && apply_telegram_theme) || true
+        (sync_equibop) || true
+        (apply_obs) || true
+        # before apply_zen: it injects the bundle this writes into the profile
+        (sync_userstyles) || true
+        (apply_zen) || true
+        (apply_ida) || true
+    ) >/dev/null 2>&1 &
 }
 
 set_wallpaper() {
     local img="$1"
     [ -f "$img" ] || return 0
     sync_hyprlock "$img"
+    sync_greeter "$img"
     # Only replace the running wallpaper when a new one can actually be started
     # (no display, for example during a rebuild from a console: leave it alone).
     command -v swaybg >/dev/null 2>&1 || return 0
@@ -1544,6 +1878,85 @@ sync_hyprlock() {
     } >"$out.tmp" 2>/dev/null && mv -f "$out.tmp" "$out" 2>/dev/null || rm -f "$out.tmp"
 }
 
+# A colour a named theme declares for itself, read from its own theme.conf.
+# Empty for a wallpaper palette (there is no theme.conf) and for any key the
+# theme leaves out, so the caller falls back to the derived palette.
+theme_conf_hex() {
+    local conf="$1" v
+    [ -n "$conf" ] || return 0
+    v="$(norm_hex "$(conf_get "$conf" "$2")" 2>/dev/null)" || return 0
+    printf '%s' "${v#\#}"
+}
+
+# The login screen (SDDM) runs as its own user before anyone has logged in, so
+# it cannot read ~/.cache. The same palette, plus a copy of the wallpaper, is
+# dropped in a world-readable directory instead; the greeter reads it at start,
+# so a theme change shows up at the next login rather than straight away.
+sync_greeter() {
+    local img="${1:-}" out="$greeter_drop/Palette.qml" wall ext bg fg dim line field icons cur conf d
+    [ -d "$greeter_drop" ] && [ -w "$greeter_drop" ] || return 0
+    if [ -z "$img" ]; then
+        img="$(cat "$state" 2>/dev/null || true)"
+    fi
+    [ -f "$img" ] || img="$default_wall"
+    # The theme's own theme.conf first, then the palette derived from it.
+    cur="$(read_state "$custom_state" "")"
+    conf=""
+    if [ -n "$cur" ] && d="$(theme_dir_of "$cur")"; then
+        conf="$d/theme.conf"
+    fi
+    bg="$(theme_conf_hex "$conf" background)"
+    [ -n "$bg" ] || bg="$(theme_var_hex bg)"
+    [ -n "$bg" ] || bg="080808"
+    fg="$(theme_conf_hex "$conf" foreground)"
+    [ -n "$fg" ] || fg="$(theme_var_hex fg)"
+    [ -n "$fg" ] || fg="cccccc"
+    dim="$(theme_conf_hex "$conf" color7)"
+    [ -n "$dim" ] || dim="$(theme_var_hex fgDim)"
+    [ -n "$dim" ] || dim="999999"
+    field="$(theme_conf_hex "$conf" color0)"
+    [ -n "$field" ] || field="$(theme_var_hex bgAlt)"
+    [ -n "$field" ] || field="$bg"
+    line="$(theme_conf_hex "$conf" border)"
+    [ -n "$line" ] || line="$(theme_var_hex outline)"
+    [ -n "$line" ] || line="$(theme_var_hex brdr)"
+    [ -n "$line" ] || line="252525"
+    icons="$(sed -nE 's/^var fontIcons[[:space:]]*=[[:space:]]*"([^"]*)".*/\1/p' \
+        "$HOME/.config/quickshell/Theme.js" 2>/dev/null | head -1)"
+    [ -n "$icons" ] || icons="JetBrainsMono Nerd Font Mono"
+
+    wall=""
+    if [ -f "$img" ]; then
+        case "$img" in *.*) ext="${img##*.}" ;; *) ext="img" ;; esac
+        rm -f "$greeter_drop"/wallpaper.* 2>/dev/null || true
+        if cp -f "$img" "$greeter_drop/.wallpaper.tmp" 2>/dev/null; then
+            chmod 0644 "$greeter_drop/.wallpaper.tmp" 2>/dev/null || true
+            if mv -f "$greeter_drop/.wallpaper.tmp" "$greeter_drop/wallpaper.$ext" 2>/dev/null; then
+                wall="$greeter_drop/wallpaper.$ext"
+            fi
+        fi
+        rm -f "$greeter_drop/.wallpaper.tmp" 2>/dev/null || true
+    fi
+
+    {
+        printf '// Written by pwnbox-theme. Edits are overwritten.\n'
+        printf 'import QtQuick\n\nQtObject {\n'
+        printf '    property string wallpaper: "%s"\n' "$wall"
+        printf '    property string bg: "#%s"\n' "$bg"
+        printf '    property string field: "#%s"\n' "$field"
+        printf '    property string fg: "#%s"\n' "$fg"
+        printf '    property string dim: "#%s"\n' "$dim"
+        printf '    property string outline: "#%s"\n' "$line"
+        printf '    property string font: "%s"\n' "$(desk_font)"
+        printf '    property string fontIcons: "%s"\n' "$icons"
+        printf '    property int rounding: %s\n' "$(ui_radius)"
+        printf '}\n'
+    } >"$out.tmp" 2>/dev/null \
+        && chmod 0644 "$out.tmp" 2>/dev/null \
+        && mv -f "$out.tmp" "$out" 2>/dev/null \
+        || rm -f "$out.tmp" 2>/dev/null || true
+}
+
 reload_apps() {
     # Poking running programs only makes sense from inside the graphical
     # session. A rebuild applies the files only; the programs that watch their
@@ -1551,17 +1964,22 @@ reload_apps() {
     session_ok || return 0
     pkill -USR1 kitty 2>/dev/null || true
     command -v hyprctl >/dev/null 2>&1 && hyprctl reload >/dev/null 2>&1 || true
-    if command -v gsettings >/dev/null 2>&1; then
-        local theme
-        gsettings set org.gnome.desktop.interface color-scheme 'default' >/dev/null 2>&1 || true
-        sleep 0.2
-        gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' >/dev/null 2>&1 || true
-        theme="$(gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null | tr -d "'")"
-        gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita' >/dev/null 2>&1 || true
-        sleep 0.2
-        gsettings set org.gnome.desktop.interface gtk-theme "${theme:-Colloid-Dark-Grey}" >/dev/null 2>&1 || true
-    fi
     restart_quickshell
+
+    # GTK apps need their theme bounced to notice, and the bounce needs a pause
+    # either side of it. That is half a second nothing else has to wait for.
+    if command -v gsettings >/dev/null 2>&1; then
+        (
+            local theme
+            gsettings set org.gnome.desktop.interface color-scheme 'default' >/dev/null 2>&1 || true
+            sleep 0.2
+            gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' >/dev/null 2>&1 || true
+            theme="$(gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null | tr -d "'")"
+            gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita' >/dev/null 2>&1 || true
+            sleep 0.2
+            gsettings set org.gnome.desktop.interface gtk-theme "${theme:-Colloid-Dark-Grey}" >/dev/null 2>&1 || true
+        ) &
+    fi
 
     ( spotify_theme ) &
     ( sleep 0.6; equibop_reload ) &
@@ -1591,20 +2009,7 @@ build_mono_icons() {
     } >"$dest/index.theme"
     printf '%s' "$fg" >"$dest/.tint"
 
-    local -A map=()
-    local dir p bn nm
-    for dir in "$HOME/.local/share/icons" "$HOME/.icons" \
-        /run/current-system/sw/share/icons/Papirus \
-        /run/current-system/sw/share/icons/hicolor \
-        /run/current-system/sw/share/icons/Adwaita; do
-        [ -d "$dir" ] || continue
-        while IFS= read -r p; do
-            bn="${p##*/}"; nm="${bn%.*}"
-            [ -n "${map[$nm]:-}" ] && continue
-            map[$nm]="$p"
-        done < <(find "$dir" \( -type f -o -type l \) 2>/dev/null | grep -E '\.(png|svg)$')
-    done
-
+    # First, so the search below looks for 140 names instead of indexing 18k.
     local -A want=()
     local d icon
     for d in /run/current-system/sw/share/applications \
@@ -1615,6 +2020,29 @@ build_mono_icons() {
         while IFS= read -r icon; do
             [ -n "$icon" ] && want["$icon"]=1
         done < <(grep -h '^Icon=' "$d"/*.desktop 2>/dev/null | cut -d= -f2-)
+    done
+
+    # One pattern of those names, so grep discards the rest in C.
+    local -A map=()
+    local dir p bn nm pat=""
+    for nm in "${!want[@]}"; do
+        case "$nm" in /* | '') continue ;; esac
+        pat="$pat|${nm//./\\.}"
+    done
+    [ -n "$pat" ] || return 0
+    pat="/(${pat#|})\.(png|svg)\$"
+    # -L: the system icon themes are symlinks into the store, and plain find
+    # returns nothing for them.
+    for dir in "$HOME/.local/share/icons" "$HOME/.icons" \
+        /run/current-system/sw/share/icons/Papirus \
+        /run/current-system/sw/share/icons/hicolor \
+        /run/current-system/sw/share/icons/Adwaita; do
+        [ -d "$dir" ] || continue
+        while IFS= read -r p; do
+            bn="${p##*/}"; nm="${bn%.*}"
+            [ -n "${map[$nm]:-}" ] && continue
+            map[$nm]="$p"
+        done < <(find -L "$dir" \( -type f -o -type l \) 2>/dev/null | grep -E "$pat")
     done
 
     local name src
@@ -1644,11 +2072,9 @@ install_palette() {
         dst="$cache/${pair##*:}"
         cp_atomic "$src" "$dst"
     done
-    # A theme's own GTK colours (themes/<Name>/gtk.css) go after the generated
-    # ones, so they win.
-    if [ -s "$cache/gtk-override.css" ]; then
-        { printf '\n'; cat "$cache/gtk-override.css"; } >>"$cache/gtk-colors.css"
-    fi
+    # The colours the theme names for itself, as GTK's own variable names. They
+    # go after the generated ones, so they win.
+    gtk_theme_colors >>"$cache/gtk-colors.css"
     if [ -f "$wal_out/pwnbox-theme.js" ]; then
         sync_quickshell "$wal_out/pwnbox-theme.js"
     fi
@@ -1996,8 +2422,9 @@ curated_theme_for() {
 apply() {
     local img="$1" curated
     [ -f "$img" ] || { notify "Theme" "Not found: $img"; return 1; }
-    # PWNBOX_PYWAL_ONLY=1 skips the hand-made theme and extracts a palette anyway.
-    if [ -z "${PWNBOX_PYWAL_ONLY:-}" ] && curated="$(curated_theme_for "$img")"; then
+    # A wallpaper always derives its own palette. The hand-made themes stay
+    # under ALT + S -> Custom; PWNBOX_CURATED=1 applies the one owning this image.
+    if [ -n "${PWNBOX_CURATED:-}" ] && curated="$(curated_theme_for "$img")"; then
         do_custom "$curated"
         return
     fi
@@ -2060,8 +2487,9 @@ restore() {
 # A fingerprint of everything a custom theme is made of.
 theme_signature() {
     local dir="${1%/}" f
-    for f in theme.conf zed.json discord.css telegram.tdesktop-theme nvim.lua zen.css obs.txt gtk.css; do
-        if [ -f "$dir/$f" ]; then cat "$dir/$f"; fi
+    for f in "$dir"/*; do
+        case "$f" in *.png | *.jpg | *.jpeg | *.webp) continue ;; esac
+        if [ -f "$f" ]; then cat "$f"; fi
     done 2>/dev/null | sha256sum 2>/dev/null | awk '{print $1}'
 }
 
@@ -2159,6 +2587,10 @@ bar_styles=(
 # a theme never changes your settings for good. Called with a theme.conf, or
 # with nothing for wallpaper themes.
 look_keys=(bar_style window_radius ui_radius transparency app_font)
+# Colours a theme may name for itself rather than let them be derived. They go
+# to $cache/theme-colors and from there to every app (see apply_theme_colors).
+theme_colors=(accent_strong accent_fill accent_deep link success success_text
+    warning error error_text on_accent on_green on_purple selection surface)
 look_file() {
     case "$1" in
         bar_style) printf '%s' "$style_state" ;;
@@ -2201,39 +2633,15 @@ apply_theme_look() {
         done
         rm -rf "$saved"
     fi
-    # The theme's own editor colours for Zed, if it has any (see sync_zed).
-    if [ -n "$conf" ] && [ -f "$(dirname "$conf")/zed.json" ] && jq -e . "$(dirname "$conf")/zed.json" >/dev/null 2>&1; then
-        cat "$(dirname "$conf")/zed.json" >"$cache/zed-override.json"
-    else
-        rm -f "$cache/zed-override.json"
-    fi
-    # ... its own Zen, OBS and GTK additions (see apply_zen, obs_theme_css and
-    # install_palette) ...
-    local pair
-    for pair in "zen.css:zen-override.css" "obs.txt:obs-override.txt" "gtk.css:gtk-override.css"; do
-        if [ -n "$conf" ] && [ -s "$(dirname "$conf")/${pair%%:*}" ]; then
-            cat "$(dirname "$conf")/${pair%%:*}" >"$cache/${pair##*:}"
-        else
-            rm -f "$cache/${pair##*:}"
-        fi
-    done
-    # ... its own Neovim colours (see config/nvim/lua/config/theme.lua) ...
-    if [ -n "$conf" ] && [ -s "$(dirname "$conf")/nvim.lua" ]; then
-        cat "$(dirname "$conf")/nvim.lua" >"$cache/nvim-override.lua"
-    else
-        rm -f "$cache/nvim-override.lua"
-    fi
-    # ... its own Telegram colours (see sync_telegram) ...
-    if [ -n "$conf" ] && [ -s "$(dirname "$conf")/telegram.tdesktop-theme" ]; then
-        cat "$(dirname "$conf")/telegram.tdesktop-theme" >"$cache/telegram-override.tdesktop-theme"
-    else
-        rm -f "$cache/telegram-override.tdesktop-theme"
-    fi
-    # ... and its own Discord colours (see discord_palette_css).
-    if [ -n "$conf" ] && [ -s "$(dirname "$conf")/discord.css" ]; then
-        cat "$(dirname "$conf")/discord.css" >"$cache/discord-override.css"
-    else
-        rm -f "$cache/discord-override.css"
+    # The colours the theme names for itself, resolved into one file that every
+    # app generator reads. A theme that names none gets the derived palette.
+    local sem="$cache/theme-colors" ckey cval
+    : >"$sem"
+    if [ -n "$conf" ] && [ -f "$conf" ]; then
+        for ckey in "${theme_colors[@]}"; do
+            cval="$(norm_hex "$(conf_get "$conf" "$ckey")" 2>/dev/null)" || continue
+            printf '%s=%s\n' "$ckey" "${cval#\#}" >>"$sem"
+        done
     fi
     if [[ "$b" =~ ^#?[0-9a-fA-F]{6}$ ]]; then
         printf '%s' "${b#\#}" >"$cache/border-override"
@@ -2533,6 +2941,7 @@ case "${1:-menu}" in
     borders)    borders ;;
     ida)        apply_ida ;;
     fonts)      apply_fonts ;;
+    greeter)    sync_greeter ;;
     restart-bar) restart_quickshell ;;
     icons)      build_mono_icons ;;
     restore)    restore ;;

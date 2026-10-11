@@ -18,6 +18,7 @@ and jump to whatever you need.
 | [Themes](themes.md) | Wallpaper themes, custom themes, the `ALT + S` menu |
 | [Fonts](fonts.md) | System/application fonts and sizes |
 | [Apps](apps.md) | Per-app theming and live updates (Spotify, Discord, Telegram…) |
+| [Browser](browser.md) | Zen: chrome, `about:` pages, and the 130 site styles |
 | [Packages](packages.md) | Tool categories and optional app sets |
 | [Privacy](privacy.md) | Hardening and zero-trace defaults |
 | [Architecture](architecture.md) | Repo layout and how a theme switch works |

@@ -1,9 +1,14 @@
 { config, lib, pkgs, inputs ? null, ... }:
 let
   # Zen browser comes from a separate flake input; skip if the input is absent.
+  # It is rewrapped so the pwnbox site-styles extension and the user.js prefs
+  # are part of the package (see pkgs/zen-browser.nix).
   zenBrowser =
     if inputs != null && inputs ? zen-browser
-    then inputs.zen-browser.packages.${pkgs.stdenv.hostPlatform.system}.default
+    then pkgs.callPackage ../../pkgs/zen-browser.nix {
+      zen-browser-unwrapped =
+        inputs.zen-browser.packages.${pkgs.stdenv.hostPlatform.system}.zen-browser-unwrapped;
+    }
     else null;
 in
 {

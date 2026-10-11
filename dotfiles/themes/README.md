@@ -43,11 +43,13 @@ as `#1a1b26` are fine).
 | `cursor` | Text cursor. Defaults to `foreground`. |
 | `color0` … `color15` | The 16-colour terminal palette. |
 | `border` | Optional. Colour of the focused window's border and of panel outlines; otherwise it is worked out from the palette. |
-| *(file)* `discord.css` | Optional, next to `theme.conf`: CSS added after the generated Discord palette, for a theme that wants its own accent there. See `Acanthus/discord.css`. |
-| *(file)* `zen.css`, `obs.txt`, `gtk.css` | Optional, next to `theme.conf`: extra CSS for Zen, extra variable lines for OBS's theme, and extra GTK colours, added after the generated ones. See `Acanthus/`. |
-| *(file)* `nvim.lua` | Optional, next to `theme.conf`: Neovim colours (`highlights` per group, `lualine` mode-chip colours). See `Acanthus/nvim.lua` and `config/nvim/lua/config/theme.lua`. |
-| *(file)* `zed.json` | Optional, next to `theme.conf`: Zed style keys (`syntax`, `editor.*`, `text` ...) laid over the generated Zed theme. See `Acanthus/zed.json`. |
-| *(file)* `telegram.tdesktop-theme` | Optional, next to `theme.conf`: `key: value;` lines that replace those keys in the generated Telegram theme. See `Acanthus/telegram.tdesktop-theme`. |
+| `accent_strong`, `accent_fill`, `accent_deep`, `on_accent`, `link`, `selection`, `success`, `success_text`, `warning`, `error` | Optional. The colours a theme names for itself instead of letting them be derived. Use them when the palette cannot say it: a fill that is darker than the accent, a status colour the palette has no hue for, text that must read on the accent. Each one is a single hex in this file and reaches every app that needs it. Anything left out stays derived, so a theme that names none looks exactly as before. See `Acanthus/theme.conf`. |
+
+A theme is only ever these two things. There is no per-app file: a `discord.css`,
+`nvim.lua`, `zed.json`, `zen.css`, `obs.txt`, `gtk.css` or
+`telegram.tdesktop-theme` next to `theme.conf` is **ignored**. Every app's
+colours are worked out from the palette and the keys above, so a colour is
+written down once and reaches all of them.
 | `bar_style`, `window_radius`, `ui_radius`, `transparency`, `app_font` | Optional "look": the bar style, corner radii (px) and window opacity (%) that go with the theme. They are applied when the theme is chosen and your previous values come back when you choose another theme. See `Acanthus/theme.conf`. |
 
 Any colour you leave out falls back to the monochrome palette, so a minimal

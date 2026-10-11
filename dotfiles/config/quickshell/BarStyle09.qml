@@ -3,13 +3,23 @@ import QtQuick.Layouts
 import "Theme.js" as Theme
 
 Item {
+    id: root
     anchors.fill: parent
+
+    function overlayColor(alpha) {
+        const h = Theme.bgAlt;
+        return Qt.rgba(
+            parseInt(h.substr(1, 2), 16) / 255,
+            parseInt(h.substr(3, 2), 16) / 255,
+            parseInt(h.substr(5, 2), 16) / 255,
+            alpha);
+    }
 
     component Ghost: Rectangle {
         Layout.alignment: Qt.AlignVCenter
         implicitHeight: 30
         radius: Theme.radius
-        color: Qt.rgba(1, 1, 1, 0.03)
+        color: root.overlayColor(0.4)
         border.color: Theme.brdr
         border.width: 2
     }

@@ -1,7 +1,7 @@
 # Desktop
 
 pwnbox ships two Wayland sessions. **Hyprland** is the default; **GNOME** is
-kept as a second choice at the login screen (LY).
+kept as a second choice at the login screen (SDDM).
 
 ## Sessions
 
@@ -10,7 +10,8 @@ kept as a second choice at the login screen (LY).
 | Hyprland | Default; Quickshell bar, notifications and power menu |
 | GNOME | Full GNOME Shell, also themed from the same palette |
 
-At login, LY shows the clock and the session picker. GNOME is configured with
+At login, SDDM shows the clock, the avatar and the session picker, in the same
+style as the lock screen. GNOME is configured with
 `dconf` so its fonts, colours and extensions match the rest of the system.
 
 ## Hyprland

@@ -15,6 +15,9 @@ lib.mkIf config.pwnbox.desktop.enable {
     excludePackages = [ pkgs.xterm ];
   };
 
+  # Which session the login manager starts by default, whichever one it is.
+  services.displayManager.defaultSession = "hyprland";
+
   services.libinput.enable = true;
 
   hardware.graphics = {

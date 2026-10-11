@@ -87,6 +87,20 @@ in
         '';
       };
 
+      loginManager = mkOption {
+        type = types.enum [
+          "sddm"
+          "ly"
+        ];
+        default = "sddm";
+        description = ''
+          Which login screen to use.  `sddm` is the graphical one, coloured
+          from the current theme to match the lock screen.  `ly` is the
+          console TUI that came before it; switching back is this one line
+          plus `upd`.
+        '';
+      };
+
       accessibility = mkOption {
         type = types.bool;
         default = true;

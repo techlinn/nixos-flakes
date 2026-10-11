@@ -48,6 +48,15 @@ in
       "equibop/pwnbox-tokens.css".source = "${h.dotfiles}/config/equibop/pwnbox-tokens.css";
 
       "ida/pwnbox-theme.css".source = "${h.dotfiles}/config/ida/pwnbox-theme.css";
+      # IDA's arrows and checkboxes, recoloured per theme by pwnbox-theme.
+      "ida/icons".source = "${h.dotfiles}/config/ida/icons";
+      # IDA's icon-swapping plugin. Available, not loaded: copy it into
+      # ~/.idapro/plugins/ to enable (it is untested on this machine).
+      "ida/plugin".source = "${h.dotfiles}/config/ida/plugin";
+
+      # Zen: the per-site styles pwnbox-theme recolours. user.js is not linked
+      # here on purpose, pkgs/zen-browser.nix reads it at build time instead.
+      "pwnbox/zen/userstyles".source = "${h.dotfiles}/config/zen/userstyles";
 
       "spicetify/Themes/pwnbox/user-base.css".source = "${h.dotfiles}/config/spicetify/Themes/pwnbox/user-base.css";
 

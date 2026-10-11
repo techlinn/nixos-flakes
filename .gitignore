@@ -5,3 +5,6 @@ result-*
 
 # Paid font (licensed per user): never publish.
 dotfiles/gnome/fonts/Berkeley Mono*
+
+# Personal photo used as the login avatar: keep it off the public repo.
+dotfiles/sddm/pwnbox/avatar.png

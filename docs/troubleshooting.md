@@ -273,10 +273,17 @@ Garbage collection runs daily and keeps 7 days. To reclaim more:
 sudo nix-collect-garbage -d
 ```
 
-## Ly / login screen
+## Login screen
 
-LY reads the palette statically from `system/desktop/ly.nix`, so it does
-not follow wallpaper themes at runtime. Change it there if needed.
+SDDM follows the current theme. It runs as its own user before login and
+cannot read `~/.cache`, so `pwnbox-theme` drops the palette and a copy of the
+wallpaper in `/var/lib/pwnbox-greeter`; the greeter reads them at start, which
+means a theme change shows up at the **next** login, not straight away. If the
+colours look wrong, check that drop point exists and run `pwnbox-theme greeter`.
+
+Set `pwnbox.desktop.loginManager = "ly"` in the host file to go back to the
+console login; LY reads its palette statically from `system/desktop/ly.nix`
+and does not follow themes.
 
 ## Mullvad does not connect
 

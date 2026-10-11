@@ -1,11 +1,13 @@
 
 local M = {}
 
-local palette_path = vim.fn.expand("~/.cache/pwnbox/theme/nvim-palette.lua")
--- A theme can bring its own editor colours (themes/<Name>/nvim.lua, copied here
--- by pwnbox-theme). It returns { highlights = { Group = { fg = ... } }, lualine = { normal = "#rrggbb", ... } }
--- and is laid over the grey scheme below, so whatever it leaves out stays as is.
-local override_path = vim.fn.expand("~/.cache/pwnbox/theme/nvim-override.lua")
+local cache = vim.fn.expand("~/.cache/pwnbox/theme/")
+local palette_path = cache .. "nvim-palette.lua"
+-- Colours a theme names for itself rather than let them be derived
+-- (key=rrggbb, see theme_colors in pwnbox-theme) plus its border colour. Both
+-- files are optional, so every role below falls back to the palette.
+local colors_path = cache .. "theme-colors"
+local border_path = cache .. "border-override"
 
 local raw_default = {
   bg = "#080808",
@@ -54,28 +56,65 @@ local function luminance(hex)
   return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
 end
 
-local function build_palette(raw)
+-- Black or white, whichever reads on a filled chip, match or cursor.
+local function on_fill(hex)
+  return luminance(hex) > 0.45 and "#000000" or "#ffffff"
+end
+
+local function build_palette(raw, named)
+  named = named or {}
   local bg, fg = raw.bg, raw.fg
   local extreme = luminance(bg) < 0.5 and "#ffffff" or "#000000"
-  return {
+  local shade = raw.color8 or mix(bg, fg, 0.43) -- the neutral the text ladder is spaced on
+  local accent = named.border or named.accent_strong or raw.accent or fg
+  if math.abs(luminance(accent) - luminance(bg)) < 0.18 then
+    accent = mix(accent, fg, 0.6) -- an accent lost in the background is no accent
+  end
+  local num = raw.color9 or raw.color1 or fg
+  local ty = raw.color2 or fg
+  local sand = raw.color3 or fg
+  -- color0 is the float and menu card, unless it sits nowhere near the background.
+  local card = raw.color0 or mix(bg, fg, 0.05)
+  if math.abs(luminance(card) - luminance(bg)) > 0.25 then
+    card = mix(bg, fg, 0.05)
+  end
+  local p = {
     bg = bg,
     bg_alt = mix(bg, fg, 0.04),
-    bg_hl = mix(bg, fg, 0.07),
-    bg_sel = mix(bg, fg, 0.15),
-    border = mix(bg, fg, 0.15),
-    border_hi = mix(bg, fg, 0.23),
-    grey = mix(bg, fg, 0.31),
-    dim = mix(bg, fg, 0.50),
-    muted = mix(bg, fg, 0.66),
+    card = card,
+    card_hi = mix(card, fg, 0.10),
+    cursorline = mix(bg, shade, 0.28),
+    sel = named.selection or mix(bg, shade, 0.45),
+    -- text, dimmest first
+    comment = mix(bg, shade, 0.92),
+    brace = mix(shade, fg, 0.05),
+    punct = mix(shade, fg, 0.09),
+    op = mix(shade, fg, 0.31),
+    panel = mix(shade, fg, 0.36),
+    var = mix(shade, fg, 0.54),
+    member = raw.color7 or fg,
     fg = fg,
     bright = mix(fg, extreme, 0.51),
     white = extreme,
-    accent = raw.accent or mix(bg, fg, 0.15),
-    red = raw.color1,
-    green = raw.color2,
-    yellow = raw.color3,
-    mauve = raw.color5,
-    cyan = raw.color6,
+    -- the accent and its dimmer steps
+    accent = accent,
+    accent_hi = raw.cursor or named.link or raw.color12 or accent,
+    accent_text = mix(accent, fg, 0.08),
+    accent_dim = mix(accent, shade, 0.22),
+    link = named.link or raw.color12 or accent,
+    -- syntax
+    fn = raw.color12 or fg,
+    const = raw.color12 or fg,
+    type = ty,
+    kw = raw.color1 or fg,
+    num = num,
+    str = mix(fg, num, 0.40),
+    sand = sand,
+    -- status
+    err = named.error or raw.color1 or fg,
+    err_text = named.error_text or named.error or raw.color1 or fg,
+    warn = named.warning or sand,
+    ok = named.success_text or named.success or ty,
     term = {
       raw.color0,
       raw.color1,
@@ -95,6 +134,21 @@ local function build_palette(raw)
       raw.color15,
     },
   }
+  p.dim = p.comment -- the two names config/plugins.lua still asks for
+  p.muted = p.panel
+  -- lualine's mode chips: a fill per mode and text that reads on it.
+  p.lualine = {
+    normal = { bg = p.type, fg = on_fill(p.type) },
+    insert = { bg = p.accent, fg = on_fill(p.accent) },
+    visual = { bg = p.accent_hi, fg = on_fill(p.accent_hi) },
+    replace = { bg = p.err, fg = on_fill(p.err) },
+    command = { bg = p.sand, fg = on_fill(p.sand) },
+    terminal = { bg = p.str, fg = on_fill(p.str) },
+    b = p.panel,
+    b_bg = p.bg,
+    c = p.var,
+  }
+  return p
 end
 
 local function read_raw()
@@ -113,26 +167,32 @@ local function read_raw()
   return raw
 end
 
-local function read_override()
-  if vim.fn.filereadable(override_path) ~= 1 then
-    return nil
+local function read_named()
+  local named = {}
+  local function take(key, text)
+    local hex = tostring(text or ""):match("^%s*#?(%x%x%x%x%x%x)%s*$")
+    if hex then
+      named[key] = "#" .. hex:lower()
+    end
   end
-  local chunk = loadfile(override_path)
-  if not chunk then
-    return nil
+  if vim.fn.filereadable(colors_path) == 1 then
+    for _, line in ipairs(vim.fn.readfile(colors_path)) do
+      local key, value = line:match("^%s*([%w_]+)%s*=%s*(%S+)")
+      if key then
+        take(key, value)
+      end
+    end
   end
-  local ok, result = pcall(chunk)
-  if ok and type(result) == "table" then
-    return result
+  if vim.fn.filereadable(border_path) == 1 then
+    take("border", vim.fn.readfile(border_path)[1])
   end
-  return nil
+  return named
 end
 
-M.palette = build_palette(raw_default)
-M.override = nil
+M.palette = build_palette(raw_default, {})
 
 function M.load()
-  local fresh = build_palette(read_raw())
+  local fresh = build_palette(read_raw(), read_named())
   for k, v in pairs(fresh) do
     M.palette[k] = v
   end
@@ -153,11 +213,13 @@ function M.watch()
   watching = true
   local uv = vim.uv or vim.loop
   local function signature()
-    local text = table.concat(vim.fn.readfile(palette_path), "\n")
-    if vim.fn.filereadable(override_path) == 1 then
-      text = text .. "\n" .. table.concat(vim.fn.readfile(override_path), "\n")
+    local parts = {}
+    for _, path in ipairs({ palette_path, colors_path, border_path }) do
+      if vim.fn.filereadable(path) == 1 then
+        table.insert(parts, table.concat(vim.fn.readfile(path), "\n"))
+      end
     end
-    return text
+    return table.concat(parts, "\n")
   end
   local last = signature()
   local timer = uv.new_timer()
@@ -197,130 +259,130 @@ function M.setup()
 
   hl("Normal", { fg = p.fg, bg = p.bg })
   hl("NormalNC", { fg = p.fg, bg = p.bg })
-  hl("NormalFloat", { fg = p.fg, bg = p.bg_alt })
-  hl("FloatBorder", { fg = p.border_hi, bg = p.bg_alt })
-  hl("FloatTitle", { fg = p.bright, bg = p.bg_alt, bold = true })
+  hl("NormalFloat", { fg = p.fg, bg = p.card })
+  hl("FloatBorder", { fg = p.accent, bg = p.card })
+  hl("FloatTitle", { fg = p.accent, bg = p.card, bold = true })
   hl("FloatShadow", { bg = p.bg })
   hl("FloatShadowThrough", { bg = p.bg })
-  hl("ColorColumn", { bg = p.bg_alt })
-  hl("Conceal", { fg = p.grey })
-  hl("Cursor", { fg = p.bg, bg = p.white })
-  hl("lCursor", { fg = p.bg, bg = p.white })
-  hl("CursorIM", { fg = p.bg, bg = p.white })
-  hl("TermCursor", { fg = p.bg, bg = p.white })
-  hl("TermCursorNC", { fg = p.bg, bg = p.grey })
-  hl("CursorColumn", { bg = p.bg_alt })
-  hl("CursorLine", { bg = p.bg_alt })
-  hl("CursorLineNr", { fg = p.white, bold = true })
-  hl("LineNr", { fg = p.grey })
-  hl("LineNrAbove", { fg = p.grey })
-  hl("LineNrBelow", { fg = p.grey })
-  hl("SignColumn", { fg = p.grey, bg = p.bg })
-  hl("FoldColumn", { fg = p.grey, bg = p.bg })
-  hl("Folded", { fg = p.muted, bg = p.bg_alt })
+  hl("ColorColumn", { bg = p.cursorline })
+  hl("Conceal", { fg = p.comment })
+  hl("Cursor", { fg = on_fill(p.accent_hi), bg = p.accent_hi })
+  hl("lCursor", { fg = on_fill(p.accent_hi), bg = p.accent_hi })
+  hl("CursorIM", { fg = on_fill(p.accent_hi), bg = p.accent_hi })
+  hl("TermCursor", { fg = on_fill(p.accent_hi), bg = p.accent_hi })
+  hl("TermCursorNC", { fg = p.bg, bg = p.comment })
+  hl("CursorColumn", { bg = p.cursorline })
+  hl("CursorLine", { bg = p.cursorline })
+  hl("CursorLineNr", { fg = p.accent_text, bold = true })
+  hl("LineNr", { fg = p.comment })
+  hl("LineNrAbove", { fg = p.comment })
+  hl("LineNrBelow", { fg = p.comment })
+  hl("SignColumn", { fg = p.comment, bg = p.bg })
+  hl("FoldColumn", { fg = p.comment, bg = p.bg })
+  hl("Folded", { fg = p.panel, bg = p.card })
   hl("EndOfBuffer", { fg = p.bg, bg = p.bg })
-  hl("NonText", { fg = p.border })
-  hl("Whitespace", { fg = p.border })
-  hl("SpecialKey", { fg = p.grey })
-  hl("MatchParen", { fg = p.white, bold = true, underline = true })
-  hl("Directory", { fg = p.bright, bold = true })
-  hl("Title", { fg = p.white, bold = true })
-  hl("ErrorMsg", { fg = p.white, bold = true })
-  hl("WarningMsg", { fg = p.muted })
-  hl("ModeMsg", { fg = p.bright, bold = true })
-  hl("MoreMsg", { fg = p.bright })
-  hl("Question", { fg = p.bright })
+  hl("NonText", { fg = p.sel })
+  hl("Whitespace", { fg = p.sel })
+  hl("SpecialKey", { fg = p.comment })
+  hl("MatchParen", { fg = p.accent_hi, bold = true, underline = true })
+  hl("Directory", { fg = p.accent, bold = true })
+  hl("Title", { fg = p.accent, bold = true })
+  hl("ErrorMsg", { fg = p.err, bold = true })
+  hl("WarningMsg", { fg = p.warn })
+  hl("ModeMsg", { fg = p.accent_text, bold = true })
+  hl("MoreMsg", { fg = p.const })
+  hl("Question", { fg = p.const })
   hl("MsgArea", { fg = p.fg, bg = p.bg })
-  hl("MsgSeparator", { fg = p.border, bg = p.bg })
+  hl("MsgSeparator", { fg = p.sel, bg = p.bg })
   hl("WinBar", { fg = p.fg, bg = p.bg, bold = true })
-  hl("WinBarNC", { fg = p.dim, bg = p.bg })
-  hl("WinSeparator", { fg = p.border, bg = p.bg })
-  hl("VertSplit", { fg = p.border, bg = p.bg })
+  hl("WinBarNC", { fg = p.comment, bg = p.bg })
+  hl("WinSeparator", { fg = p.comment, bg = p.bg })
+  hl("VertSplit", { fg = p.comment, bg = p.bg })
 
-  hl("Visual", { fg = p.white, bg = p.bg_sel })
-  hl("VisualNOS", { fg = p.white, bg = p.bg_sel })
-  hl("Search", { fg = p.bg, bg = p.bright })
-  hl("IncSearch", { fg = p.bg, bg = p.white, bold = true })
-  hl("CurSearch", { fg = p.bg, bg = p.white, bold = true })
-  hl("Substitute", { fg = p.bg, bg = p.muted })
+  hl("Visual", { bg = p.sel })
+  hl("VisualNOS", { bg = p.sel })
+  hl("Search", { fg = on_fill(p.type), bg = p.type })
+  hl("IncSearch", { fg = on_fill(p.accent), bg = p.accent, bold = true })
+  hl("CurSearch", { fg = on_fill(p.accent), bg = p.accent, bold = true })
+  hl("Substitute", { fg = on_fill(p.sand), bg = p.sand })
 
-  hl("Pmenu", { fg = p.fg, bg = p.bg_alt })
-  hl("PmenuSel", { fg = p.bg, bg = p.bright, bold = true })
-  hl("PmenuKind", { fg = p.muted, bg = p.bg_alt })
-  hl("PmenuKindSel", { fg = p.bg, bg = p.bright })
-  hl("PmenuExtra", { fg = p.dim, bg = p.bg_alt })
-  hl("PmenuExtraSel", { fg = p.bg, bg = p.bright })
-  hl("PmenuSbar", { bg = p.border })
-  hl("PmenuThumb", { bg = p.grey })
-  hl("WildMenu", { fg = p.bg, bg = p.bright })
+  hl("Pmenu", { fg = p.fg, bg = p.card })
+  hl("PmenuSel", { fg = p.fg, bg = p.card_hi, bold = true })
+  hl("PmenuKind", { fg = p.str, bg = p.card })
+  hl("PmenuKindSel", { fg = p.str, bg = p.card_hi })
+  hl("PmenuExtra", { fg = p.comment, bg = p.card })
+  hl("PmenuExtraSel", { fg = p.panel, bg = p.card_hi })
+  hl("PmenuSbar", { bg = p.sel })
+  hl("PmenuThumb", { bg = p.comment })
+  hl("WildMenu", { fg = on_fill(p.accent), bg = p.accent })
 
-  hl("StatusLine", { fg = p.fg, bg = p.bg_alt })
-  hl("StatusLineNC", { fg = p.dim, bg = p.bg })
-  hl("TabLine", { fg = p.dim, bg = p.bg })
-  hl("TabLineFill", { fg = p.dim, bg = p.bg })
-  hl("TabLineSel", { fg = p.white, bg = p.bg, bold = true })
+  hl("StatusLine", { fg = p.var, bg = p.bg })
+  hl("StatusLineNC", { fg = p.comment, bg = p.bg })
+  hl("TabLine", { fg = p.comment, bg = p.bg })
+  hl("TabLineFill", { fg = p.comment, bg = p.bg })
+  hl("TabLineSel", { fg = p.accent_text, bg = p.bg, bold = true })
 
-  hl("Comment", { fg = p.dim, italic = true })
-  hl("Constant", { fg = p.muted })
-  hl("String", { fg = p.fg })
-  hl("Character", { fg = p.fg })
-  hl("Number", { fg = p.muted })
-  hl("Float", { fg = p.muted })
-  hl("Boolean", { fg = p.bright, bold = true })
-  hl("Identifier", { fg = p.fg })
-  hl("Function", { fg = p.white })
-  hl("Statement", { fg = p.bright, bold = true })
-  hl("Conditional", { fg = p.bright, bold = true })
-  hl("Repeat", { fg = p.bright, bold = true })
-  hl("Label", { fg = p.bright })
-  hl("Operator", { fg = p.muted })
-  hl("Keyword", { fg = p.bright, bold = true })
-  hl("Exception", { fg = p.bright, bold = true })
-  hl("PreProc", { fg = p.muted })
-  hl("Include", { fg = p.bright, bold = true })
-  hl("Define", { fg = p.muted })
-  hl("Macro", { fg = p.bright })
-  hl("PreCondit", { fg = p.muted })
-  hl("Type", { fg = p.bright })
-  hl("StorageClass", { fg = p.bright, bold = true })
-  hl("Structure", { fg = p.bright })
-  hl("Typedef", { fg = p.bright })
-  hl("Special", { fg = p.fg })
-  hl("SpecialChar", { fg = p.fg })
-  hl("Tag", { fg = p.bright })
-  hl("Delimiter", { fg = p.muted })
-  hl("SpecialComment", { fg = p.dim, italic = true })
-  hl("Debug", { fg = p.muted })
-  hl("Underlined", { underline = true })
-  hl("Ignore", { fg = p.grey })
-  hl("Error", { fg = p.white, bold = true })
-  hl("Todo", { fg = p.bg, bg = p.bright, bold = true })
+  hl("Comment", { fg = p.comment, italic = true })
+  hl("Constant", { fg = p.const })
+  hl("String", { fg = p.str })
+  hl("Character", { fg = p.str })
+  hl("Number", { fg = p.num })
+  hl("Float", { fg = p.num })
+  hl("Boolean", { fg = p.num })
+  hl("Identifier", { fg = p.var })
+  hl("Function", { fg = p.fn })
+  hl("Statement", { fg = p.kw })
+  hl("Conditional", { fg = p.kw })
+  hl("Repeat", { fg = p.kw })
+  hl("Label", { fg = p.kw })
+  hl("Operator", { fg = p.op })
+  hl("Keyword", { fg = p.kw })
+  hl("Exception", { fg = p.kw })
+  hl("PreProc", { fg = p.const })
+  hl("Include", { fg = p.kw })
+  hl("Define", { fg = p.const })
+  hl("Macro", { fg = p.const })
+  hl("PreCondit", { fg = p.const })
+  hl("Type", { fg = p.type })
+  hl("StorageClass", { fg = p.kw, italic = true })
+  hl("Structure", { fg = p.type })
+  hl("Typedef", { fg = p.type })
+  hl("Special", { fg = p.str })
+  hl("SpecialChar", { fg = p.kw })
+  hl("Tag", { fg = p.accent })
+  hl("Delimiter", { fg = p.punct })
+  hl("SpecialComment", { fg = p.comment, italic = true })
+  hl("Debug", { fg = p.const })
+  hl("Underlined", { fg = p.link, underline = true })
+  hl("Ignore", { fg = p.comment })
+  hl("Error", { fg = p.err, bold = true })
+  hl("Todo", { fg = on_fill(p.sand), bg = p.sand, bold = true })
 
-  hl("DiagnosticError", { fg = p.white, bold = true })
-  hl("DiagnosticWarn", { fg = p.bright })
-  hl("DiagnosticInfo", { fg = p.muted })
-  hl("DiagnosticHint", { fg = p.dim })
-  hl("DiagnosticOk", { fg = p.fg })
-  hl("DiagnosticVirtualTextError", { fg = p.white, italic = true })
-  hl("DiagnosticVirtualTextWarn", { fg = p.muted, italic = true })
-  hl("DiagnosticVirtualTextInfo", { fg = p.dim, italic = true })
-  hl("DiagnosticVirtualTextHint", { fg = p.grey, italic = true })
-  hl("DiagnosticUnderlineError", { undercurl = true, sp = p.white })
-  hl("DiagnosticUnderlineWarn", { undercurl = true, sp = p.muted })
-  hl("DiagnosticUnderlineInfo", { undercurl = true, sp = p.dim })
-  hl("DiagnosticUnderlineHint", { undercurl = true, sp = p.grey })
-  hl("DiagnosticFloatingError", { fg = p.white })
-  hl("DiagnosticFloatingWarn", { fg = p.muted })
-  hl("DiagnosticFloatingInfo", { fg = p.dim })
-  hl("DiagnosticFloatingHint", { fg = p.grey })
+  hl("DiagnosticError", { fg = p.err, bold = true })
+  hl("DiagnosticWarn", { fg = p.warn })
+  hl("DiagnosticInfo", { fg = p.str })
+  hl("DiagnosticHint", { fg = p.comment })
+  hl("DiagnosticOk", { fg = p.ok })
+  hl("DiagnosticVirtualTextError", { fg = p.err_text, italic = true })
+  hl("DiagnosticVirtualTextWarn", { fg = p.warn, italic = true })
+  hl("DiagnosticVirtualTextInfo", { fg = p.str, italic = true })
+  hl("DiagnosticVirtualTextHint", { fg = p.comment, italic = true })
+  hl("DiagnosticUnderlineError", { undercurl = true, sp = p.err })
+  hl("DiagnosticUnderlineWarn", { undercurl = true, sp = p.warn })
+  hl("DiagnosticUnderlineInfo", { undercurl = true, sp = p.str })
+  hl("DiagnosticUnderlineHint", { undercurl = true, sp = p.comment })
+  hl("DiagnosticFloatingError", { fg = p.err_text })
+  hl("DiagnosticFloatingWarn", { fg = p.warn })
+  hl("DiagnosticFloatingInfo", { fg = p.str })
+  hl("DiagnosticFloatingHint", { fg = p.comment })
 
-  hl("DiffAdd", { fg = p.fg, bg = p.bg_alt })
-  hl("DiffChange", { fg = p.fg, bg = p.bg_hl })
-  hl("DiffDelete", { fg = p.dim, bg = p.bg })
-  hl("DiffText", { fg = p.white, bg = p.bg_sel, bold = true })
-  hl("Added", { fg = p.muted })
-  hl("Changed", { fg = p.bright })
-  hl("Removed", { fg = p.dim })
+  hl("DiffAdd", { bg = mix(p.bg, p.ok, 0.12) })
+  hl("DiffChange", { bg = mix(p.bg, p.warn, 0.12) })
+  hl("DiffDelete", { fg = p.err, bg = mix(p.bg, p.err, 0.12) })
+  hl("DiffText", { bg = mix(p.bg, p.accent, 0.22), bold = true })
+  hl("Added", { fg = p.ok })
+  hl("Changed", { fg = p.warn })
+  hl("Removed", { fg = p.err })
 
   local links = {
     ["@comment"] = "Comment",
@@ -331,8 +393,8 @@ function M.setup()
     ["@operator"] = "Operator",
     ["@punctuation"] = "Delimiter",
     ["@punctuation.delimiter"] = "Delimiter",
-    ["@punctuation.bracket"] = "Delimiter",
-    ["@punctuation.special"] = "Special",
+    ["@punctuation.bracket"] = { fg = p.brace },
+    ["@punctuation.special"] = { fg = p.op },
     ["@string"] = "String",
     ["@string.regex"] = "SpecialChar",
     ["@string.escape"] = "SpecialChar",
@@ -344,17 +406,21 @@ function M.setup()
     ["@number.float"] = "Float",
     ["@float"] = "Float",
     ["@function"] = "Function",
-    ["@function.builtin"] = "Special",
+    ["@function.builtin"] = "Function",
     ["@function.call"] = "Function",
     ["@function.macro"] = "Macro",
+    ["@function.method"] = "Function",
+    ["@function.method.call"] = "Function",
     ["@method"] = "Function",
     ["@method.call"] = "Function",
-    ["@constructor"] = "Special",
-    ["@parameter"] = "Identifier",
+    ["@constructor"] = "Type",
+    ["@parameter"] = { fg = p.member },
     ["@keyword"] = "Keyword",
-    ["@keyword.function"] = "Keyword",
+    ["@keyword.function"] = { fg = p.kw, italic = true },
     ["@keyword.operator"] = "Operator",
-    ["@keyword.return"] = "Keyword",
+    ["@keyword.return"] = { fg = p.kw, italic = true },
+    ["@keyword.storage"] = { fg = p.kw, italic = true },
+    ["@keyword.modifier"] = { fg = p.kw, italic = true },
     ["@keyword.conditional"] = "Conditional",
     ["@keyword.repeat"] = "Repeat",
     ["@keyword.exception"] = "Exception",
@@ -368,15 +434,15 @@ function M.setup()
     ["@type"] = "Type",
     ["@type.builtin"] = "Type",
     ["@type.definition"] = "Typedef",
-    ["@type.qualifier"] = "Keyword",
+    ["@type.qualifier"] = { fg = p.kw, italic = true },
     ["@storageclass"] = "StorageClass",
     ["@attribute"] = "PreProc",
-    ["@field"] = "Identifier",
-    ["@property"] = "Identifier",
+    ["@field"] = { fg = p.member },
+    ["@property"] = { fg = p.member },
     ["@variable"] = "Identifier",
-    ["@variable.builtin"] = "Special",
-    ["@variable.parameter"] = "Identifier",
-    ["@variable.member"] = "Identifier",
+    ["@variable.builtin"] = "Keyword",
+    ["@variable.parameter"] = { fg = p.member },
+    ["@variable.member"] = { fg = p.member },
     ["@constant"] = "Constant",
     ["@constant.builtin"] = "Constant",
     ["@constant.macro"] = "Macro",
@@ -398,8 +464,8 @@ function M.setup()
     ["@text.emphasis"] = { italic = true },
     ["@text.strong"] = { bold = true },
     ["@tag"] = "Tag",
-    ["@tag.attribute"] = "Identifier",
-    ["@tag.delimiter"] = "Delimiter",
+    ["@tag.attribute"] = "PreProc",
+    ["@tag.delimiter"] = { fg = p.brace },
     ["@markup"] = "Normal",
     ["@markup.strong"] = { bold = true },
     ["@markup.emphasis"] = { italic = true },
@@ -408,8 +474,12 @@ function M.setup()
     ["@markup.heading"] = "Title",
     ["@markup.raw"] = "String",
     ["@markup.link"] = "Underlined",
-    ["@markup.link.url"] = "Underlined",
+    ["@markup.link.url"] = { fg = p.member, underline = true },
     ["@markup.list"] = "Special",
+    ["@lsp.type.macro"] = "Macro",
+    ["@lsp.type.lifetime"] = { fg = p.kw, italic = true },
+    ["@lsp.typemod.keyword.controlFlow"] = "Keyword",
+    ["@lsp.typemod.variable.mutable"] = { fg = p.var, underline = false },
   }
   for group, target in pairs(links) do
     if type(target) == "table" then
@@ -419,53 +489,53 @@ function M.setup()
     end
   end
 
-  hl("TreesitterContext", { bg = p.bg_alt })
-  hl("TreesitterContextLineNumber", { fg = p.grey, bg = p.bg_alt })
+  hl("TreesitterContext", { bg = p.card })
+  hl("TreesitterContextLineNumber", { fg = p.comment, bg = p.card })
 
-  hl("LspReferenceText", { bg = p.bg_sel })
-  hl("LspReferenceRead", { bg = p.bg_sel })
-  hl("LspReferenceWrite", { bg = p.bg_sel, underline = true })
-  hl("LspSignatureActiveParameter", { fg = p.white, bold = true })
-  hl("LspCodeLens", { fg = p.dim })
+  hl("LspReferenceText", { bg = p.sel })
+  hl("LspReferenceRead", { bg = p.sel })
+  hl("LspReferenceWrite", { bg = p.sel, underline = true })
+  hl("LspSignatureActiveParameter", { fg = p.accent, bold = true })
+  hl("LspCodeLens", { fg = p.comment })
 
-  hl("GitSignsAdd", { fg = p.muted })
-  hl("GitSignsChange", { fg = p.bright })
-  hl("GitSignsDelete", { fg = p.dim })
-  hl("GitSignsAddNr", { fg = p.muted })
-  hl("GitSignsChangeNr", { fg = p.bright })
-  hl("GitSignsDeleteNr", { fg = p.dim })
+  hl("GitSignsAdd", { fg = p.ok })
+  hl("GitSignsChange", { fg = p.warn })
+  hl("GitSignsDelete", { fg = p.err })
+  hl("GitSignsAddNr", { fg = p.ok })
+  hl("GitSignsChangeNr", { fg = p.warn })
+  hl("GitSignsDeleteNr", { fg = p.err })
   hl("GitSignsAddLn", { bg = p.bg_alt })
   hl("GitSignsChangeLn", { bg = p.bg_alt })
-  hl("GitSignsCurrentLineBlame", { fg = p.grey, italic = true })
+  hl("GitSignsCurrentLineBlame", { fg = p.comment, italic = true })
 
-  hl("IblIndent", { fg = p.border })
-  hl("IblScope", { fg = p.grey })
-  hl("IblWhitespace", { fg = p.border })
+  hl("IblIndent", { fg = p.sel })
+  hl("IblScope", { fg = p.comment })
+  hl("IblWhitespace", { fg = p.sel })
 
-  hl("WhichKey", { fg = p.bright, bold = true })
-  hl("WhichKeyGroup", { fg = p.muted })
+  hl("WhichKey", { fg = p.accent, bold = true })
+  hl("WhichKeyGroup", { fg = p.kw })
   hl("WhichKeyDesc", { fg = p.fg })
-  hl("WhichKeySeparator", { fg = p.grey })
-  hl("WhichKeyFloat", { bg = p.bg_alt })
-  hl("WhichKeyBorder", { fg = p.border_hi, bg = p.bg_alt })
-  hl("WhichKeyValue", { fg = p.dim })
+  hl("WhichKeySeparator", { fg = p.comment })
+  hl("WhichKeyFloat", { bg = p.card })
+  hl("WhichKeyBorder", { fg = p.accent, bg = p.card })
+  hl("WhichKeyValue", { fg = p.comment })
 
-  hl("NotifyBackground", { bg = p.bg_alt })
-  hl("NotifyERRORBorder", { fg = p.white })
-  hl("NotifyWARNBorder", { fg = p.muted })
-  hl("NotifyINFOBorder", { fg = p.dim })
-  hl("NotifyDEBUGBorder", { fg = p.grey })
-  hl("NotifyTRACEBorder", { fg = p.grey })
-  hl("NotifyERRORIcon", { fg = p.white })
-  hl("NotifyWARNIcon", { fg = p.muted })
-  hl("NotifyINFOIcon", { fg = p.dim })
-  hl("NotifyDEBUGIcon", { fg = p.grey })
-  hl("NotifyTRACEIcon", { fg = p.grey })
-  hl("NotifyERRORTitle", { fg = p.white })
-  hl("NotifyWARNTitle", { fg = p.muted })
-  hl("NotifyINFOTitle", { fg = p.fg })
-  hl("NotifyDEBUGTitle", { fg = p.muted })
-  hl("NotifyTRACETitle", { fg = p.muted })
+  hl("NotifyBackground", { bg = p.card })
+  hl("NotifyERRORBorder", { fg = p.err })
+  hl("NotifyWARNBorder", { fg = p.warn })
+  hl("NotifyINFOBorder", { fg = p.str })
+  hl("NotifyDEBUGBorder", { fg = p.comment })
+  hl("NotifyTRACEBorder", { fg = p.comment })
+  hl("NotifyERRORIcon", { fg = p.err })
+  hl("NotifyWARNIcon", { fg = p.warn })
+  hl("NotifyINFOIcon", { fg = p.str })
+  hl("NotifyDEBUGIcon", { fg = p.comment })
+  hl("NotifyTRACEIcon", { fg = p.comment })
+  hl("NotifyERRORTitle", { fg = p.err })
+  hl("NotifyWARNTitle", { fg = p.warn })
+  hl("NotifyINFOTitle", { fg = p.str })
+  hl("NotifyDEBUGTitle", { fg = p.panel })
+  hl("NotifyTRACETitle", { fg = p.panel })
   hl("NotifyERRORBody", { fg = p.fg })
   hl("NotifyWARNBody", { fg = p.fg })
   hl("NotifyINFOBody", { fg = p.fg })
@@ -473,71 +543,76 @@ function M.setup()
   hl("NotifyTRACEBody", { fg = p.fg })
 
   hl("BufferLineFill", { bg = p.bg })
-  hl("BufferLineBackground", { fg = p.dim, bg = p.bg })
-  hl("BufferLineBufferVisible", { fg = p.muted, bg = p.bg })
-  hl("BufferLineBufferSelected", { fg = p.white, bg = p.bg, bold = true })
-  hl("BufferLineSeparator", { fg = p.border, bg = p.bg })
-  hl("BufferLineSeparatorVisible", { fg = p.border, bg = p.bg })
-  hl("BufferLineSeparatorSelected", { fg = p.border, bg = p.bg })
-  hl("BufferLineCloseButton", { fg = p.dim, bg = p.bg })
-  hl("BufferLineCloseButtonVisible", { fg = p.dim, bg = p.bg })
-  hl("BufferLineCloseButtonSelected", { fg = p.white, bg = p.bg })
-  hl("BufferLineIndicatorSelected", { fg = p.white, bg = p.bg })
-  hl("BufferLineModified", { fg = p.bright, bg = p.bg })
-  hl("BufferLineModifiedSelected", { fg = p.bright, bg = p.bg })
+  hl("BufferLineBackground", { fg = p.comment, bg = p.bg })
+  hl("BufferLineBufferVisible", { fg = p.panel, bg = p.bg })
+  hl("BufferLineBufferSelected", { fg = p.accent_text, bg = p.bg, bold = true })
+  hl("BufferLineSeparator", { fg = p.bg, bg = p.bg })
+  hl("BufferLineSeparatorVisible", { fg = p.bg, bg = p.bg })
+  hl("BufferLineSeparatorSelected", { fg = p.bg, bg = p.bg })
+  hl("BufferLineCloseButton", { fg = p.comment, bg = p.bg })
+  hl("BufferLineCloseButtonVisible", { fg = p.comment, bg = p.bg })
+  hl("BufferLineCloseButtonSelected", { fg = p.accent_text, bg = p.bg })
+  hl("BufferLineIndicatorSelected", { fg = p.accent, bg = p.bg })
+  hl("BufferLineModified", { fg = p.accent_text, bg = p.bg })
+  hl("BufferLineModifiedSelected", { fg = p.accent_text, bg = p.bg })
+  hl("BufferLineDiagnostic", { fg = p.comment, bg = p.bg })
+  hl("BufferLineError", { fg = p.err, bg = p.bg })
+  hl("BufferLineErrorSelected", { fg = p.err, bg = p.bg, bold = true })
+  hl("BufferLineWarning", { fg = p.warn, bg = p.bg })
+  hl("BufferLineWarningSelected", { fg = p.warn, bg = p.bg, bold = true })
 
-  hl("DevIconDefault", { fg = p.muted })
+  hl("DevIconDefault", { fg = p.panel })
 
-  hl("NeoTreeNormal", { fg = p.fg, bg = p.bg })
-  hl("NeoTreeNormalNC", { fg = p.fg, bg = p.bg })
-  hl("NeoTreeDirectoryName", { fg = p.bright, bold = true })
-  hl("NeoTreeDirectoryIcon", { fg = p.bright })
-  hl("NeoTreeFileIcon", { fg = p.muted })
-  hl("NeoTreeFileName", { fg = p.fg })
-  hl("NeoTreeFileNameOpened", { fg = p.white, bold = true })
-  hl("NeoTreeIndentMarker", { fg = p.grey })
-  hl("NeoTreeExpander", { fg = p.grey })
-  hl("NeoTreeDotfile", { fg = p.dim })
-  hl("NeoTreeHiddenByName", { fg = p.dim })
-  hl("NeoTreeIgnored", { fg = p.dim })
-  hl("NeoTreeModified", { fg = p.bright })
-  hl("NeoTreeGitAdded", { fg = p.muted })
-  hl("NeoTreeGitModified", { fg = p.bright })
-  hl("NeoTreeGitDeleted", { fg = p.dim })
-  hl("NeoTreeGitRenamed", { fg = p.bright })
-  hl("NeoTreeGitStaged", { fg = p.muted })
-  hl("NeoTreeGitUnstaged", { fg = p.white })
-  hl("NeoTreeGitUntracked", { fg = p.dim, italic = true })
-  hl("NeoTreeGitConflict", { fg = p.white, bold = true, italic = true })
-  hl("NeoTreeGitIgnored", { fg = p.dim })
-  hl("NeoTreeCursorLine", { bg = p.bg_alt })
-  hl("NeoTreeWinSeparator", { fg = p.border, bg = p.bg })
+  hl("NeoTreeNormal", { fg = p.accent_dim, bg = p.bg })
+  hl("NeoTreeNormalNC", { fg = p.accent_dim, bg = p.bg })
+  hl("NeoTreeRootName", { fg = p.accent, bold = true })
+  hl("NeoTreeDirectoryName", { fg = p.accent_dim })
+  hl("NeoTreeDirectoryIcon", { fg = p.accent })
+  hl("NeoTreeFileIcon", { fg = p.accent_dim })
+  hl("NeoTreeFileName", { fg = p.accent_dim })
+  hl("NeoTreeFileNameOpened", { fg = p.accent_text, bold = true })
+  hl("NeoTreeIndentMarker", { fg = p.comment })
+  hl("NeoTreeExpander", { fg = p.comment })
+  hl("NeoTreeDotfile", { fg = p.comment })
+  hl("NeoTreeHiddenByName", { fg = p.comment, italic = true })
+  hl("NeoTreeIgnored", { fg = p.comment })
+  hl("NeoTreeModified", { fg = p.accent_text })
+  hl("NeoTreeGitAdded", { fg = p.ok })
+  hl("NeoTreeGitModified", { fg = p.accent_text })
+  hl("NeoTreeGitDeleted", { fg = p.err })
+  hl("NeoTreeGitRenamed", { fg = p.str })
+  hl("NeoTreeGitStaged", { fg = p.ok })
+  hl("NeoTreeGitUnstaged", { fg = p.warn })
+  hl("NeoTreeGitUntracked", { fg = p.warn, italic = true })
+  hl("NeoTreeGitConflict", { fg = p.err, bold = true, italic = true })
+  hl("NeoTreeGitIgnored", { fg = p.comment })
+  hl("NeoTreeCursorLine", { bg = p.cursorline })
+  hl("NeoTreeWinSeparator", { fg = p.comment, bg = p.bg })
   hl("NeoTreeEndOfBuffer", { fg = p.bg, bg = p.bg })
-  hl("NeoTreeTitleBar", { fg = p.bright, bg = p.bg_alt, bold = true })
+  hl("NeoTreeTitleBar", { fg = p.accent, bg = p.bg, bold = true })
 
-  hl("CmpDocumentation", { fg = p.fg, bg = p.bg_alt })
-  hl("CmpDocumentationBorder", { fg = p.border_hi, bg = p.bg_alt })
+  hl("CmpDocumentation", { fg = p.fg, bg = p.card })
+  hl("CmpDocumentationBorder", { fg = p.accent, bg = p.card })
   hl("CmpItemAbbr", { fg = p.fg })
-  hl("CmpItemAbbrDeprecated", { fg = p.grey, strikethrough = true })
-  hl("CmpItemAbbrMatch", { fg = p.white, bold = true })
-  hl("CmpItemAbbrMatchFuzzy", { fg = p.bright, bold = true })
-  hl("CmpItemMenu", { fg = p.dim, italic = true })
-  hl("CmpItemKind", { fg = p.muted })
-  hl("CmpItemKindText", { fg = p.muted })
-  hl("CmpItemKindFunction", { fg = p.fg })
-  hl("CmpItemKindMethod", { fg = p.fg })
-  hl("CmpItemKindVariable", { fg = p.fg })
-  hl("CmpItemKindKeyword", { fg = p.bright })
-  hl("CmpItemKindSnippet", { fg = p.dim })
-  hl("CmpGhostText", { fg = p.grey, italic = true })
+  hl("CmpItemAbbrDeprecated", { fg = p.comment, strikethrough = true })
+  hl("CmpItemAbbrMatch", { fg = p.accent, bold = true })
+  hl("CmpItemAbbrMatchFuzzy", { fg = p.accent, bold = true })
+  hl("CmpItemMenu", { fg = p.comment, italic = true })
+  hl("CmpItemKind", { fg = p.str })
+  hl("CmpItemKindText", { fg = p.panel })
+  hl("CmpItemKindFunction", { fg = p.fn })
+  hl("CmpItemKindMethod", { fg = p.fn })
+  hl("CmpItemKindVariable", { fg = p.var })
+  hl("CmpItemKindKeyword", { fg = p.kw })
+  hl("CmpItemKindSnippet", { fg = p.const })
+  hl("CmpGhostText", { fg = p.comment, italic = true })
 
-  -- The theme's own colours, if it has any, go on top of everything above.
-  M.override = read_override()
-  if M.override and type(M.override.highlights) == "table" then
-    for group, opts in pairs(M.override.highlights) do
-      hl(group, opts)
-    end
-  end
+  hl("TelescopeNormal", { fg = p.fg, bg = p.card })
+  hl("TelescopeBorder", { fg = p.accent, bg = p.card })
+  hl("TelescopeTitle", { fg = p.accent, bg = p.card, bold = true })
+  hl("TelescopeSelection", { fg = p.fg, bg = p.card_hi })
+  hl("TelescopeMatching", { fg = p.accent, bold = true })
+  hl("TelescopePromptPrefix", { fg = p.accent })
 
   for i, color in ipairs(p.term) do
     vim.g["terminal_color_" .. (i - 1)] = color

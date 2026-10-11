@@ -141,23 +141,24 @@ require("neogit").setup({
 })
 
 local function lualine_theme()
-  -- A theme can colour the mode chip (and the position chip, which shares it)
-  -- per mode, and the other sections; see config/theme.lua.
-  local ov = (require("config.theme").override or {}).lualine or {}
-  local function mode(name, fallback)
+  -- The mode chip (and the position chip, which shares it) is filled per mode
+  -- from the palette; see lualine in config/theme.lua.
+  local lp = palette.lualine or {}
+  local function mode(name)
+    local chip = lp[name] or { bg = palette.bright, fg = palette.bg }
     return {
-      a = { fg = ov.chip_text or palette.bg, bg = ov[name] or fallback, gui = "bold" },
-      b = { fg = ov.b or palette.fg, bg = ov.b_bg or palette.bg_alt },
-      c = { fg = ov.c or palette.muted, bg = palette.bg },
+      a = { fg = chip.fg, bg = chip.bg, gui = "bold" },
+      b = { fg = lp.b or palette.fg, bg = lp.b_bg or palette.bg_alt },
+      c = { fg = lp.c or palette.muted, bg = palette.bg },
     }
   end
   return {
-    normal = mode("normal", palette.bright),
-    insert = mode("insert", palette.white),
-    visual = mode("visual", palette.muted),
-    replace = mode("replace", palette.white),
-    command = mode("command", palette.bright),
-    terminal = mode("terminal", palette.bright),
+    normal = mode("normal"),
+    insert = mode("insert"),
+    visual = mode("visual"),
+    replace = mode("replace"),
+    command = mode("command"),
+    terminal = mode("terminal"),
     inactive = {
       a = { fg = palette.dim, bg = palette.bg_alt },
       b = { fg = palette.dim, bg = palette.bg_alt },

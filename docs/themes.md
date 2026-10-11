@@ -40,7 +40,7 @@ a 16-colour palette from it. That palette is then written everywhere:
 - Quickshell (`~/.config/quickshell/Theme.js`)
 - kitty, rofi, fuzzel
 - GTK 3 / 4 and GNOME settings
-- Hyprland borders, Hyprlock
+- Hyprland borders, Hyprlock, the SDDM login screen (at the next login)
 - Neovim, Zed
 - Telegram, Equibop (Discord), Spotify
 - OBS Studio and Zen (applied the next time they start)
@@ -70,6 +70,37 @@ dotfiles/themes/
 └── 18 hand-made wallpaper themes, one folder per wallpaper, each with
     theme.conf  +  wallpaper.jpg (or .png)
 ```
+
+### Colours a theme can name
+
+Every app's colours are worked out from the 16-colour palette, so a theme is
+normally just `theme.conf` + a wallpaper and nothing is written per app. A theme
+only names a colour when the palette cannot say it: a fill darker than the
+accent, a status colour the palette has no hue for, or text that has to read on
+the accent. Anything not named stays derived.
+
+| Key | What it sets |
+| --- | --- |
+| `border` | Focused window border and panel outlines |
+| `surface` | Base of the surface ladder (cards, panels, hovers). Defaults to `color0` |
+| `accent_strong` | Filled marks: badges, unread dots, file circles |
+| `accent_fill` | Large button fills (GTK buttons, Zen's primary button) |
+| `accent_deep` | The darkest accent surface |
+| `on_accent` | Text and icons drawn on an accent fill |
+| `link` | Links and small accent text |
+| `selection` | Selection and separator surfaces |
+| `success`, `success_text` | "Online" / "good", as a fill and as text |
+| `warning` | "Idle" / caution |
+| `error`, `error_text` | Errors, as a fill and as text |
+
+These reach Discord, Zen, GTK, OBS, Telegram, Neovim, Zed and IDA from the one
+file. Acanthus is the worked example: it keeps surfaces black and neutral and
+uses its red only on small elements, which is why it names ten of them.
+
+Discord's own green, blue, teal and blurple scales are re-tinted to the accent's
+hue (in OKLCH, keeping each step's lightness) so no large button arrives in a
+foreign colour, while status dots keep their real colour because there the hue
+still means something.
 
 ### The wallpaper themes
 
@@ -148,31 +179,14 @@ Notes on how some were made:
   | `transparency` | Window opacity in % |
   | `app_font` | Application (monospace) font, one of the `ALT + S → Application font` names |
 
-  Next to `theme.conf` a theme can also have `zed.json` (editor colours for
-  Zed), `nvim.lua` (Neovim colours), `discord.css` (Discord colours added after
-  the generated ones) and `telegram.tdesktop-theme` (Telegram colours that
-  replace generated ones).
+  There are no per-app files. Neovim, Zed, Discord, Telegram, Zen, OBS, GTK and
+  IDA all have their colours worked out from the palette and the colour keys,
+  so a colour is written down once. Neovim reloads within a couple of seconds
+  when the theme changes; Zed and Discord follow immediately, Zen's site styles
+  within a few seconds, and Zen's own window at its next start.
 
-  Neovim is grey by default, built from shades of the theme's text colour.
-  A theme's `nvim.lua` gives it real colours for code, the file tree, the tabs,
-  the status line, popups and the file finder; Neovim reloads them within a
-  couple of seconds when the theme changes, and goes back to grey on a theme
-  without one. Acanthus uses it for greys and whites with only the
-  theme's red and rose as accents: red italic keywords, rose functions, pink
-  strings, light grey types, bright red numbers, rose-beige tree, light grey
-  mode chip. The same palette is in its `zed.json`, and the terminal's own
-  colours (`theme.conf`) have no green, teal or purple either.
-
-  When a rebuild brings a changed version of the theme you are using (any of
-  these files), it is applied again by itself; you do not have to pick the
-  theme a second time.
-
-  A theme folder can also hold a `zed.json` with its own editor colours for
-  Zed (which colour keywords, functions, types and so on get). It is laid over
-  the Zed theme that is generated from the palette, so anything it leaves out
-  still follows the palette. Acanthus uses this to give Zed the reference's
-  editor scheme: mauve italic keywords, rose functions, olive types and
-  constants, dark-teal members, grey variables, rose operators.
+  When a rebuild brings a changed `theme.conf` for the theme you are using, it
+  is applied again by itself; you do not have to pick the theme a second time.
 
   Acanthus sets the Noir bar and square corners; transparency and fonts are
   left as you have them.
@@ -182,11 +196,12 @@ Notes on how some were made:
   open page or server. Big areas are never filled with it. In Discord, Zen,
   OBS, GTK apps, Telegram, Neovim and Zed the surfaces, hovers and selections
   are black or neutral grey, and buttons are outlined in red instead of filled.
-  A theme can do this per app with extra files next to `theme.conf`: `zen.css`,
-  `obs.txt` (OBS variables), `gtk.css`, `discord.css`, `nvim.lua`, `zed.json`
-  and `telegram.tdesktop-theme`. Its `discord.css` uses a darker red than the desktop's rose and
-  re-tints Discord's own green, blue and teal to it, so buttons that are
-  normally another colour blend in. Choosing it
+  It does this with the colour keys: `accent_strong` is a darker red than the
+  desktop's rose for filled marks, `accent_fill` is the darker still fill for
+  large buttons, `surface` keeps the surface ladder off pure black, and
+  `success`/`warning` keep status readable by tone. Discord's own green, blue
+  and teal are re-tinted to the accent's hue so buttons that are normally
+  another colour blend in. Choosing it
   applies those; choosing any other theme afterwards puts back the bar style,
   corners and transparency you had before, so a theme never changes your
   settings for good. You can still change any of them with `ALT + S` while it
@@ -244,6 +259,9 @@ apps include or read:
 | `~/.config/equibop/settings/quickCss.css` | Discord (Equibop) |
 | `~/.config/obs-studio/themes/Pwnbox.ovt` | OBS Studio |
 | `<zen profile>/chrome/userChrome.css`, `userContent.css` | Zen |
+| `~/.cache/pwnbox/theme/userstyles/*.user.css` | Zen's 130 per-site styles |
+| `~/.cache/pwnbox/theme/userstyles/pwnbox-all.user.css` | the bundle the Zen extension reads |
+| `~/.idapro/themes/pwnbox/theme.css`, `icons/*.svg` | IDA Pro |
 
 ## Where state lives
 

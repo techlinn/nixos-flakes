@@ -13,7 +13,7 @@
 │   └── nixos/                template host
 ├── system/                   system-wide NixOS config
 │   ├── options.nix           pwnbox.* option tree
-│   ├── desktop/              Hyprland, GNOME, LY, fonts, GTK, X
+│   ├── desktop/              Hyprland, GNOME, SDDM/LY, fonts, GTK, X
 │   ├── hardening/            kernel/sysctl/network/service hardening (split)
 │   ├── packages/             system packages, grouped by purpose
 │   ├── vm-evasion/           KVM anti-VM-detection patches + params

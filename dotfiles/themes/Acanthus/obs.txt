@@ -1,8 +1,0 @@
-    /* Acanthus: selections and highlights are neutral greys, with the rose kept
-       for the focus ring and the selected tab's line. */
-    --primary: var(--grey4);
-    --primary_light: var(--grey3);
-    --primary_lighter: var(--blue1);
-    --primary_dark: var(--grey5);
-    --primary_darker: var(--grey6);
-    --tab_border_selected: var(--blue2);

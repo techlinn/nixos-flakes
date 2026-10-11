@@ -167,21 +167,6 @@ if [ ! -f "$host_dir/default.nix" ]; then
     info "time zone: $tz"
   fi
 
-  if [ -f /etc/nixos/hardware-configuration.nix ]; then
-    cp /etc/nixos/hardware-configuration.nix "$host_dir/hardware-configuration.nix"
-    info "hardware : /etc/nixos/hardware-configuration.nix"
-  else
-    # Not through `run`: in quiet mode that sends the command's output to /dev/null,
-    # which would leave this file empty while reporting success.
-    if "${SUDO[@]}" nixos-generate-config --show-hardware-config >"$host_dir/hardware-configuration.nix" 2>/dev/null \
-      && [ -s "$host_dir/hardware-configuration.nix" ]; then
-      info "hardware : nixos-generate-config"
-    else
-      rm -f "$host_dir/hardware-configuration.nix"
-      die "could not generate hardware-configuration.nix (run nixos-generate-config yourself and copy the result to $host_dir)"
-    fi
-  fi
-
   # An NVIDIA graphics card needs its own driver, and the hardening module's
   # kernel-module lock has to be off for that driver to load.
   has_nvidia=0
@@ -243,6 +228,35 @@ EOF
 }
 EOF
     info "boot     : GRUB on $disk"
+  fi
+fi
+
+# The hardware file has to describe THIS machine. A host directory that already
+# came with the repo (hosts/nixos is the usual one: a fresh install is called
+# "nixos") names another machine's disks, and the build then succeeds while the
+# next boot stops in emergency mode, where the locked root account cannot open a
+# shell. Regenerate it whenever this machine's root filesystem is not named in it.
+hw="$host_dir/hardware-configuration.nix"
+root_uuid="$(findmnt -no UUID / 2>/dev/null || true)"
+if [ ! -f "$hw" ] || { [ -n "$root_uuid" ] && ! grep -qF "$root_uuid" "$hw"; }; then
+  if [ -f "$hw" ]; then
+    cp -f "$hw" "$hw.foreign"
+    warn "hosts/$host/hardware-configuration.nix is for another machine, kept as hardware-configuration.nix.foreign"
+  fi
+  if [ -f /etc/nixos/hardware-configuration.nix ] \
+    && { [ -z "$root_uuid" ] || grep -qF "$root_uuid" /etc/nixos/hardware-configuration.nix; }; then
+    cp /etc/nixos/hardware-configuration.nix "$hw"
+    info "hardware : /etc/nixos/hardware-configuration.nix"
+  else
+    # Not through `run`: in quiet mode that sends the command's output to /dev/null,
+    # which would leave this file empty while reporting success.
+    if "${SUDO[@]}" nixos-generate-config --show-hardware-config >"$hw" 2>/dev/null \
+      && [ -s "$hw" ]; then
+      info "hardware : nixos-generate-config"
+    else
+      rm -f "$hw"
+      die "could not generate hardware-configuration.nix (run nixos-generate-config yourself and copy the result to $host_dir)"
+    fi
   fi
 fi
 

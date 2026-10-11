@@ -3,7 +3,8 @@
 {
   imports = [
     ./xserver.nix        # X11 fallback + display manager plumbing
-    ./ly.nix             # ly: console TUI login manager
+    ./sddm.nix           # sddm: graphical login manager (pwnbox.desktop.loginManager)
+    ./ly.nix             # ly: console TUI login manager, the other half of that option
     ./accessibility.nix  # at-spi2 bus (off if pwnbox.desktop.accessibility = false)
     ./hyprland.nix       # Hyprland compositor
     ./gnome.nix          # GNOME services (keyring, portals, settings-daemon)

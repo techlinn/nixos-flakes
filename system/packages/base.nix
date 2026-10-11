@@ -21,7 +21,12 @@ in
     micro vim neovim tmux screen
 
     # System inspection.
-    htop btop lshw pciutils usbutils lm_sensors fastfetch
+    htop lshw pciutils usbutils lm_sensors fastfetch
+    # Reading and repairing the EFI boot entries on this dual-boot machine.
+    efibootmgr
+    # cudaSupport only adds autoAddDriverRunpath (no CUDA toolkit) so btop can
+    # dlopen libnvidia-ml from /run/opengl-driver and show the GPU box.
+    (btop.override { cudaSupport = true; })
 
     # Build toolchains kept lean — add more in packages/languages.nix.
     gcc gnumake pkg-config nodejs bun pnpm go

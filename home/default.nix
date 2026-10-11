@@ -8,5 +8,6 @@
     ./gtk.nix      # GTK theme (icons, cursor, dark mode)
     ./neovim.nix   # neovim plugins + config
     ./claude-sync.nix # Claude Code skills, MCP servers, npm programs from ~/Flakes/claude
+    ./zen-styles.nix # serves the recoloured Zen site styles for the extension
   ];
 }

@@ -24,5 +24,6 @@ final: prev: {
     };
 
     tg-config = final.callPackage ../pkgs/tg-config.nix { };
+    sddm-theme = final.callPackage ../pkgs/sddm-theme.nix { };
   };
 }

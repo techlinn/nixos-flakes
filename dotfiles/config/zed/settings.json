@@ -1,5 +1,7 @@
 {
   "cli_default_open_behavior": "new_window",
+  "tab_size": 4,
+  "detect_indentation": false,
   "buffer_font_family": "JetBrains Mono",
   "ui_font_family": "Berkeley Mono",
   "agent_buffer_font_size": 10.5,

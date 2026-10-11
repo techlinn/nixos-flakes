@@ -112,10 +112,10 @@ encrypted `tdata`.
 - Fonts: the application font is written into AyuGram's `monoFont` setting;
   Telegram's UI uses the system font.
 
-- A theme can carry its own Telegram colours in a
-  `telegram.tdesktop-theme` file next to its `theme.conf`: each `key: value;`
-  line replaces that key in the generated theme. Acanthus uses it to give
-  Telegram its red and rose where the base theme has plain white and blue.
+- Telegram's accent keys are worked out from the palette and the theme's colour
+  keys (`accent_strong`, `on_accent`, `link`, `success_text`): the base theme's
+  accent is plain white and its links blue, so those are replaced with the
+  theme's own, filling only the small marks and leaving big areas neutral.
 
 `pwnbox-theme` only syncs `tdata` (which requires Telegram to be closed) when
 AyuGram is not running. While it is running, the theme file is rewritten and
